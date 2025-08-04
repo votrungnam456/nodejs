@@ -5,6 +5,7 @@ const port = process.env.PORT || 3000;
 const hostname = process.env.HOST_NAME || "localhost";
 const path = require("path");
 const axios = require("axios");
+const Note = require("./model/note");
 // const { connectDB } = require("./connectDB.js");
 
 require("dotenv").config();
@@ -24,30 +25,36 @@ connectDB
   .then(async (db) => {
     console.log("Database connected");
     // Các lệnh tiếp theo của bạn
-    collection = db.collection("admin");
+    // collection = db.collection("admin");
+    const note = new Note({
+      title: "Hello World",
+      body: "This is a test note",
+    });
+    await note.save();
+    console.log("Note saved");
 
-    try {
-      // const insertResult = await collection.insertMany([
-      //   { a: 1 },
-      //   { a: 2 },
-      //   { a: 3 },
-      //   { a: 4 },
-      //   { a: 5 },
-      // ]);
-      // console.log("insert ok");
-      // const deleteResult = await collection.deleteMany({ a: 1 });
-      await collection.deleteMany({});
-      // console.log("Inserted documents =>", insertResult);
-    } catch (err) {
-      console.error("Lỗi insert:", err.message);
-    }
-    const indexes = await collection.indexes();
-    // console.log(indexes);
-    // console.log(collection.collectionName);
-    const docs = await collection.find().toArray();
-    console.log(docs);
-    const collections = await db.listCollections().toArray();
-    console.log(collections.map((c) => c.name));
+    // try {
+    //   // const insertResult = await collection.insertMany([
+    //   //   { a: 1 },
+    //   //   { a: 2 },
+    //   //   { a: 3 },
+    //   //   { a: 4 },
+    //   //   { a: 5 },
+    //   // ]);
+    //   // console.log("insert ok");
+    //   // const deleteResult = await collection.deleteMany({ a: 1 });
+    //   await collection.deleteMany({});
+    //   // console.log("Inserted documents =>", insertResult);
+    // } catch (err) {
+    //   console.error("Lỗi insert:", err.message);
+    // }
+    // const indexes = await collection.indexes();
+    // // console.log(indexes);
+    // // console.log(collection.collectionName);
+    // const docs = await collection.find().toArray();
+    // console.log(docs);
+    // const collections = await db.listCollections().toArray();
+    // console.log(collections.map((c) => c.name));
   })
   .catch((err) => {
     console.error("Failed to connect to database", err);
@@ -105,32 +112,32 @@ app.get("/api/user/:id", async (req, res) => {
   }
   res.json(data); // Trả về JSON
 });
-app.get("/ejs", (req, res) => {
-  res.render("example.ejs");
+app.get("/homepage", (req, res) => {
+  res.render("homepage.ejs");
 });
 
 // Trang cần đăng nhập
-app.get("/private", (req, res, next) => {
-  const loggedIn = false;
-  if (!loggedIn) {
-    return next({ status: 401, message: "Bạn chưa đăng nhập" });
-  }
-  res.send("Đã vào trang riêng tư");
-});
+// app.get("/private", (req, res, next) => {
+//   const loggedIn = false;
+//   if (!loggedIn) {
+//     return next({ status: 401, message: "Bạn chưa đăng nhập" });
+//   }
+//   res.send("Đã vào trang riêng tư");
+// });
 
 // Trang admin
-app.get("/admin", (req, res, next) => {
-  const isAdmin = false;
-  if (!isAdmin) {
-    return next({ status: 403, message: "Không đủ quyền truy cập" });
-  }
-  res.send("Trang admin");
-});
+// app.get("/admin", (req, res, next) => {
+//   const isAdmin = false;
+//   if (!isAdmin) {
+//     return next({ status: 403, message: "Không đủ quyền truy cập" });
+//   }
+//   res.send("Trang admin");
+// });
 
 // Lỗi giả lập
-app.get("/error", (req, res) => {
-  throw new Error("Lỗi 500 bất ngờ!");
-});
+// app.get("/error", (req, res) => {
+//   throw new Error("Lỗi 500 bất ngờ!");
+// });
 
 // 404 – Không tìm thấy route nào khớp
 app.use((req, res) => {
