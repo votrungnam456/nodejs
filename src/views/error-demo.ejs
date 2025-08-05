@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error Demo Page</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 3rem;
+      max-width: 800px;
+      width: 90%;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 2rem;
+    }
+
+    .demo-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .btn {
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: inline-block;
+      color: white;
+    }
+
+    .btn-404 {
+      background: #ff6b6b;
+    }
+
+    .btn-500 {
+      background: #fd79a8;
+    }
+
+    .btn-403 {
+      background: #fdcb6e;
+    }
+
+    .btn-throw {
+      background: #74b9ff;
+    }
+
+    .btn-api {
+      background: #55a3ff;
+    }
+
+    .btn-custom {
+      background: #a29bfe;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .info {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 1rem;
+      margin: 2rem 0;
+      text-align: left;
+    }
+
+    .info h3 {
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .info p {
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+
+    .code {
+      background: #2d3436;
+      color: #dfe6e9;
+      padding: 0.5rem;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🚀 Error Page Demo</h1>
+    <p>Test different types of errors and see how they're handled by the server</p>
+
+    <div class="demo-buttons">
+      <a href="/error/404" class="btn btn-404">Test 404 Error</a>
+      <a href="/error/500" class="btn btn-500">Test 500 Error</a>
+      <a href="/error/403" class="btn btn-403">Test 403 Error</a>
+      <a href="/error/throw" class="btn btn-throw">Test Thrown Error</a>
+      <a href="/error/api" class="btn btn-api">Test API Error</a>
+      <a href="/nonexistent-page" class="btn btn-custom">Test 404 Route</a>
+    </div>
+
+    <div class="info">
+      <h3>📋 How to use the error page:</h3>
+      <p><strong>Server-side errors:</strong> The server automatically catches errors and renders the error page with
+        detailed information.</p>
+      <p><strong>Client-side errors:</strong> You can redirect to the error page with custom error data using URL
+        parameters.</p>
+
+      <h3>🔧 Error handling in your routes:</h3>
+      <div class="code">
+        app.get("/your-route", async (req, res, next) => {
+        try {
+        // Your code here
+        res.json(data);
+        } catch (error) {
+        const customError = new Error("Your error message");
+        customError.status = 500; // or any status code
+        customError.details = error.message;
+        next(customError); // This will render the error page
+        }
+        });
+      </div>
+    </div>
+
+    <div class="info">
+      <h3>🎨 Error page features:</h3>
+      <ul style="text-align: left; color: #666;">
+        <li>✅ Responsive design that works on all devices</li>
+        <li>✅ Different icons and colors for different error types</li>
+        <li>✅ Click to copy error details</li>
+        <li>✅ Keyboard shortcuts (Escape to go back, Enter to go home)</li>
+        <li>✅ Action buttons to navigate or retry</li>
+        <li>✅ Timestamp of when the error occurred</li>
+        <li>✅ Development mode shows stack traces</li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 2rem;">
+      <a href="/" class="btn btn-404">← Go Home</a>
+    </div>
+  </div>
+
+  <script>
+    // Demo of client-side error handling
+    function handleClientError(error) {
+      const errorData = encodeURIComponent(JSON.stringify({
+        status: error.status || 500,
+        title: error.title || 'Client Error',
+        message: error.message || 'Something went wrong',
+        details: error.details || ''
+      }));
+
+      window.location.href = `/error?data=${errorData}`;
+    }
+
+    // Example of how to handle fetch errors
+    async function testApiError() {
+      try {
+        const response = await fetch('/api/user/999'); // This will likely fail
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log(data);
+      } catch (error) {
+        console.error('API Error:', error);
+        // You could redirect to error page here
+        // handleClientError(error);
+      }
+    }
+
+    // Add some interactive features
+    document.addEventListener('DOMContentLoaded', function () {
+      // Add click effects to buttons
+      const buttons = document.querySelectorAll('.btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function (e) {
+          // Add a small delay to show the click effect
+          setTimeout(() => {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+              this.style.transform = '';
+            }, 150);
+          }, 100);
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>

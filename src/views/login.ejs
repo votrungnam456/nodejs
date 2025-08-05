@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Form</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-header h1 {
+      color: #333;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-header p {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e1e5e9;
+      border-radius: 5px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .success-message {
+      color: #27ae60;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .demo-credentials {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .demo-credentials h4 {
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e1e5e9;
+    }
+
+    .login-link a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <h1>Welcome Back</h1>
+      <p>Please sign in to your account</p>
+    </div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+
+      <button type="submit" class="login-btn" id="loginBtn">
+        <span class="btn-text">Sign In</span>
+        <span class="loading" style="display: none;"></span>
+      </button>
+
+      <div class="error-message" id="errorMessage"></div>
+      <div class="success-message" id="successMessage"></div>
+    </form>
+
+    <div class="demo-credentials">
+      <h4>Demo Credentials:</h4>
+      <p><strong>Username:</strong> admin</p>
+      <p><strong>Password:</strong> password123</p>
+    </div>
+
+    <div class="login-link">
+      <p>Don't have an account? <a href="/signup">Sign Up</a></p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const loginForm = document.getElementById('loginForm');
+      const loginBtn = document.getElementById('loginBtn');
+      const btnText = loginBtn.querySelector('.btn-text');
+      const loading = loginBtn.querySelector('.loading');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+
+      // Function to show/hide loading state
+      function setLoading(isLoading) {
+        if (isLoading) {
+          btnText.style.display = 'none';
+          loading.style.display = 'inline-block';
+          loginBtn.disabled = true;
+        } else {
+          btnText.style.display = 'inline';
+          loading.style.display = 'none';
+          loginBtn.disabled = false;
+        }
+      }
+
+      // Function to show messages
+      function showMessage(message, type) {
+        errorMessage.style.display = 'none';
+        successMessage.style.display = 'none';
+
+        if (type === 'error') {
+          errorMessage.textContent = message;
+          errorMessage.style.display = 'block';
+        } else if (type === 'success') {
+          successMessage.textContent = message;
+          successMessage.style.display = 'block';
+        }
+      }
+
+      // Function to call API
+      async function loginUser(username, password) {
+        try {
+          // Simulate API call - replace with your actual API endpoint
+          const response = await fetch('/api/user/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: username,
+              password: password
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error('Login error:', error);
+          throw error;
+        }
+      }
+
+      // Function to call external API (JSONPlaceholder as example)
+      async function callExternalAPI() {
+        try {
+          const response = await fetch('/api/user');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log('External API data:', data);
+          return data;
+        } catch (error) {
+          console.error('External API error:', error);
+          throw error;
+        }
+      }
+
+      // Handle form submission
+      loginForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // Basic validation
+        if (!username || !password) {
+          showMessage('Please fill in all fields', 'error');
+          return;
+        }
+
+        setLoading(true);
+        showMessage('', '');
+
+        try {
+          const data = await loginUser(username, password);
+          console.log('Login response:', data);
+
+          if (data.status === 200) {
+            showMessage('Login successful! Redirecting...', 'success');
+
+            // Call external API after successful login
+            try {
+              const apiData = await callExternalAPI();
+              console.log('User data loaded:', apiData);
+            } catch (apiError) {
+              console.error('Failed to load user data:', apiError);
+            }
+
+            // Simulate redirect after 2 seconds
+            setTimeout(() => {
+              alert('Login successful! In a real app, you would be redirected to the dashboard.');
+            }, 2000);
+          } else {
+            showMessage(data.message || 'Login failed', 'error');
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          if (error.message.includes('HTTP error! status: 401')) {
+            showMessage('Invalid username or password', 'error');
+          } else if (error.message.includes('HTTP error! status: 400')) {
+            showMessage('Please fill in all fields', 'error');
+          } else {
+            showMessage('Login failed. Please try again.', 'error');
+          }
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      // Add some interactive features
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => {
+        input.addEventListener('focus', function () {
+          this.parentElement.style.transform = 'scale(1.02)';
+        });
+
+        input.addEventListener('blur', function () {
+          this.parentElement.style.transform = 'scale(1)';
+        });
+      });
+
+      // Auto-fill demo credentials for testing
+      document.addEventListener('keydown', function (e) {
+        if (e.ctrlKey && e.key === 'd') {
+          document.getElementById('username').value = 'admin';
+          document.getElementById('password').value = 'password123';
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
