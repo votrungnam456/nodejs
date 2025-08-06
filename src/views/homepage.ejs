@@ -298,6 +298,7 @@
                 <li><a href="#features">Features</a></li>
                 <li><a href="#about">About</a></li>
                 <li><a href="#contact">Contact</a></li>
+                <li><a href="#" id="logoutBtn">Logout</a></li>
             </ul>
         </div>
     </nav>
@@ -307,6 +308,10 @@
         <div class="hero-content">
             <h1>Welcome to the Future</h1>
             <p>Discover amazing possibilities with our innovative platform. We're here to transform your ideas into reality with cutting-edge technology and exceptional user experience.</p>
+            <div id="userInfo" style="margin-bottom: 2rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 10px; display: none;">
+                <h3 style="margin-bottom: 0.5rem;">Welcome, <span id="userName">User</span>!</h3>
+                <p id="userEmail" style="margin: 0; opacity: 0.9;"></p>
+            </div>
             <a href="#features" class="cta-button">Get Started</a>
         </div>
     </section>
@@ -379,5 +384,57 @@
     <footer class="footer">
         <p>&copy; 2024 BrandName. All rights reserved. | Made with ❤️ for amazing experiences</p>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication and load user data
+            async function checkAuth() {
+                try {
+                    const response = await fetch('/api/user/me');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === 200) {
+                            // User is authenticated, show user info
+                            document.getElementById('userName').textContent = data.user.firstName + ' ' + data.user.lastName;
+                            document.getElementById('userEmail').textContent = data.user.email;
+                            document.getElementById('userInfo').style.display = 'block';
+                        }
+                    } else {
+                        // User not authenticated, redirect to login
+                        window.location.href = '/';
+                    }
+                } catch (error) {
+                    console.error('Auth check failed:', error);
+                    window.location.href = '/';
+                }
+            }
+
+            // Logout functionality
+            document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                try {
+                    const response = await fetch('/api/user/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Redirect to login page after logout
+                        window.location.href = '/';
+                    } else {
+                        console.error('Logout failed');
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            });
+
+            // Check authentication on page load
+            checkAuth();
+        });
+    </script>
 </body>
 </html>

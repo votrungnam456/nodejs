@@ -311,18 +311,10 @@
           if (data.status === 200) {
             showMessage('Login successful! Redirecting...', 'success');
 
-            // Call external API after successful login
-            try {
-              const apiData = await callExternalAPI();
-              console.log('User data loaded:', apiData);
-            } catch (apiError) {
-              console.error('Failed to load user data:', apiError);
-            }
-
-            // Simulate redirect after 2 seconds
+            // Redirect to homepage after successful login
             setTimeout(() => {
-              alert('Login successful! In a real app, you would be redirected to the dashboard.');
-            }, 2000);
+              window.location.href = '/homepage';
+            }, 1500);
           } else {
             showMessage(data.message || 'Login failed', 'error');
           }
