@@ -1,11 +1,11 @@
 const express = require("express");
 const axios = require("axios");
 const router = express.Router();
-const { connectDB } = require("../connectDB");
-const User = require("../model/user");
+const { connectDB } = require("../../connectDB");
+const User = require("../../model/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const authMiddleware = require("../middleware/auth");
+const authMiddleware = require("../../middleware/auth");
 
 router.post("/user/login", async (req, res, next) => {
   try {
@@ -160,6 +160,62 @@ router.get("/user/me", authMiddleware, async (req, res, next) => {
     });
   } catch (error) {
     console.error("Get user error:", error.message);
+    res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+    });
+  }
+});
+
+// Update user profile endpoint (protected route)
+router.put("/user/me", authMiddleware, async (req, res, next) => {
+  try {
+    const { firstName, lastName, email } = req.body;
+
+    // Basic validation
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({
+        status: 400,
+        message: "All fields are required",
+      });
+    }
+
+    // Check if email is already taken by another user
+    const existingUser = await User.findOne({
+      email: email,
+      _id: { $ne: req.user._id },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        status: 409,
+        message: "Email already exists",
+      });
+    }
+
+    // Update user profile
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+      },
+      { new: true }
+    );
+
+    res.json({
+      status: 200,
+      message: "Profile updated successfully",
+      user: {
+        username: updatedUser.username,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error.message);
     res.status(500).json({
       status: 500,
       message: "Internal server error",

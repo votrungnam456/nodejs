@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List - Your Store</title>
+    <link rel="stylesheet" href="/assets/css/products.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">
+                <i class="fas fa-shopping-bag"></i>
+                Product Store
+            </h1>
+            <nav class="nav">
+                <a href="/homepage" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Home
+                </a>
+                <a href="/profile" class="nav-link">
+                    <i class="fas fa-user"></i>
+                    Profile
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Search and Filter Section -->
+            <section class="filters-section">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="Search products..." class="search-input">
+                        <button id="searchBtn" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label for="categoryFilter" class="filter-label">Category:</label>
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="all">All Categories</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Books">Books</option>
+                            <option value="Home & Garden">Home & Garden</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Beauty">Beauty</option>
+                            <option value="Food">Food</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="priceRange" class="filter-label">Price Range:</label>
+                        <div class="price-inputs">
+                            <input type="number" id="minPrice" placeholder="Min" class="price-input">
+                            <span class="price-separator">-</span>
+                            <input type="number" id="maxPrice" placeholder="Max" class="price-input">
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="sortBy" class="filter-label">Sort By:</label>
+                        <select id="sortBy" class="filter-select">
+                            <option value="createdAt">Newest First</option>
+                            <option value="price">Price: Low to High</option>
+                            <option value="-price">Price: High to Low</option>
+                            <option value="name">Name: A to Z</option>
+                            <option value="-name">Name: Z to A</option>
+                            <option value="rating">Rating: High to Low</option>
+                        </select>
+                    </div>
+
+                    <button id="clearFilters" class="clear-filters-btn">
+                        <i class="fas fa-times"></i>
+                        Clear Filters
+                    </button>
+                </div>
+            </section>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="loading-spinner hidden">
+                <div class="spinner"></div>
+                <p>Loading products...</p>
+            </div>
+
+            <!-- Products Grid -->
+            <section class="products-section">
+                <div class="products-header">
+                    <h2 class="products-title">Our Products</h2>
+                    <div class="products-count">
+                        <span id="productsCount">0</span> products found
+                    </div>
+                </div>
+
+                <div id="productsGrid" class="products-grid">
+                    <!-- Products will be loaded here dynamically -->
+                </div>
+
+                <!-- No Products Message -->
+                <div id="noProducts" class="no-products hidden">
+                    <i class="fas fa-search"></i>
+                    <h3>No products found</h3>
+                    <p>Try adjusting your search criteria or filters</p>
+                </div>
+            </section>
+
+            <!-- Pagination -->
+            <section class="pagination-section">
+                <div id="pagination" class="pagination hidden">
+                    <button id="prevPage" class="pagination-btn">
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </button>
+                    
+                    <div class="page-numbers">
+                        <span id="pageInfo">Page 1 of 1</span>
+                    </div>
+                    
+                    <button id="nextPage" class="pagination-btn">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modalContent">
+                <!-- Modal content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Product Store. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/assets/js/products.js"></script>
+</body>
+</html> 

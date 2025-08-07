@@ -8,7 +8,8 @@ const path = require("path");
 
 // Import route files
 const viewRoutes = require("./routes/views");
-const apiRoutes = require("./routes/api");
+const apiUserRoutes = require("./routes/api/user.js");
+const apiProductRoutes = require("./routes/api/product.js");
 
 require("dotenv").config();
 
@@ -33,7 +34,8 @@ connectDB
   });
 
 // Use route files
-app.use("/api", apiRoutes);
+app.use("/api", apiUserRoutes);
+app.use("/api", apiProductRoutes);
 app.use("/", viewRoutes);
 
 app.listen(port, hostname, () => {

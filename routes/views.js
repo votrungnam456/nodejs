@@ -17,9 +17,19 @@ router.get("/signup", (req, res) => {
   res.render("signup.ejs");
 });
 
-// Error demo route
-router.get("/error-demo", (req, res) => {
-  res.render("error-demo.ejs");
+// Profile route
+router.get("/profile", (req, res) => {
+  res.render("profile.ejs");
+});
+
+// Products route
+router.get("/products", (req, res) => {
+  res.render("products.ejs");
+});
+
+// Import route
+router.get("/import", (req, res) => {
+  res.render("import.ejs");
 });
 
 // Test routes for different error types
@@ -66,8 +76,8 @@ router.use((req, res) => {
       status: 404,
       title: "Page Not Found",
       message: "The page you're looking for doesn't exist.",
-      details: `Requested URL: ${req.originalUrl}`
-    }
+      details: `Requested URL: ${req.originalUrl}`,
+    },
   });
 });
 
@@ -79,9 +89,9 @@ router.use((err, req, res, next) => {
       status: err.status || 500,
       title: err.status >= 500 ? "Internal Server Error" : "Error",
       message: err.message || "Something went wrong on our end.",
-      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    }
+      details: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    },
   });
 });
 
-module.exports = router; 
+module.exports = router;
