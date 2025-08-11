@@ -29,7 +29,9 @@ router.get("/products", (req, res) => {
 
 // Import route
 router.get("/import", (req, res) => {
-  res.render("import.ejs");
+  res.render("import.ejs", {
+    BASE_API_URL: process.env.BASE_API_URL,
+  });
 });
 
 // Test routes for different error types

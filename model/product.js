@@ -3,12 +3,10 @@ const { Schema, model } = require("mongoose");
 const productSchema = new Schema({
   title: {
     type: String,
-    required: true,
     trim: true,
   },
   sku: {
     type: String,
-    required: true,
     trim: true,
   },
   ean: {
@@ -17,7 +15,6 @@ const productSchema = new Schema({
   },
   active: {
     type: Boolean,
-    default: true,
   },
   is_variant: {
     type: Boolean,
@@ -25,15 +22,15 @@ const productSchema = new Schema({
   },
   image: {
     type: String,
-    default: "/assets/images/default-product.png",
+    default: "",
   },
   url: {
     type: String,
-    required: true,
+    default: "",
   },
   description: {
     type: String,
-    required: true,
+    default: "",
   },
   description_long: {
     type: String,
@@ -41,7 +38,6 @@ const productSchema = new Schema({
   },
   stock: {
     type: Number,
-    required: true,
     min: 0,
     default: 999,
   },
@@ -56,7 +52,7 @@ const productSchema = new Schema({
   categories: {
     main: {
       type: String,
-      required: true,
+      default: "",
     },
     all: [
       {
@@ -72,7 +68,6 @@ const productSchema = new Schema({
       },
       url: {
         type: String,
-        required: true,
       },
       "media-type": {
         type: String,
@@ -99,11 +94,9 @@ const productSchema = new Schema({
     {
       facet_name: {
         type: String,
-        required: true,
       },
       facet_value: {
         type: String,
-        required: true,
       },
     },
   ],
@@ -111,11 +104,9 @@ const productSchema = new Schema({
     {
       facet_name: {
         type: String,
-        required: true,
       },
       facet_value: {
         type: Number,
-        required: true,
       },
     },
   ],

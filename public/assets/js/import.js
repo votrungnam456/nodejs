@@ -228,21 +228,49 @@ class ImportManager {
       return;
     }
 
-    this.showLoading(true, "Processing import...");
+    this.showLoading(true, "Uploading file to server...");
 
     try {
-      // Simulate processing time
-      await this.delay(2000);
+      const formData = new FormData();
+      formData.append("file", this.currentFile);
 
-      const options = this.getImportOptions();
-      console.log(options);
-      const results = this.processImport(this.jsonData, options);
+      console.log("Uploading file:", this.currentFile.name);
+      console.log("File size:", this.currentFile.size);
 
-      this.showLoading(false);
-      this.displayResults(results);
+      const res = await fetch(`/api/products`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log("Server response:", data);
+
+        this.showLoading(false);
+
+        // // Display success results
+        // const results = {
+        //   success: true,
+        //   totalItems: data.data.itemCount,
+        //   processedItems: data.data.itemCount,
+        //   skippedItems: 0,
+        //   errors: [],
+        //   dataType: data.data.dataType,
+        //   importMode: "upload",
+        //   timestamp: new Date().toISOString(),
+        //   fileName: data.data.fileName,
+        //   fileSize: this.formatFileSize(data.data.fileSize),
+        // };
+
+        // this.displayResults(results);
+        this.showLoading(false);
+      } else {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Upload failed");
+      }
     } catch (error) {
       this.showLoading(false);
-      this.showError("Import failed: " + error.message);
+      this.showError("Upload failed: " + error.message);
     }
   }
 
@@ -402,10 +430,18 @@ class ImportManager {
 
     resultsContent.innerHTML = `
       <div class="result-summary ${statusClass}">
-        <h4>${successIcon} Import ${
+        <h4>${successIcon} File Upload ${
       results.success ? "Completed" : "Failed"
     }</h4>
         <div class="result-stats">
+          <div class="stat-item">
+            <span class="stat-label">File Name:</span>
+            <span class="stat-value">${results.fileName || "N/A"}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">File Size:</span>
+            <span class="stat-value">${results.fileSize || "N/A"}</span>
+          </div>
           <div class="stat-item">
             <span class="stat-label">Total Items:</span>
             <span class="stat-value">${results.totalItems}</span>
@@ -423,7 +459,7 @@ class ImportManager {
             <span class="stat-value">${results.dataType}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">Import Mode:</span>
+            <span class="stat-label">Upload Mode:</span>
             <span class="stat-value">${results.importMode}</span>
           </div>
         </div>
@@ -440,7 +476,7 @@ class ImportManager {
             : ""
         }
         <div class="result-timestamp">
-          <small>Imported at: ${new Date(
+          <small>Uploaded at: ${new Date(
             results.timestamp
           ).toLocaleString()}</small>
         </div>
