@@ -17,9 +17,27 @@ app.set("views", "./src/views/");
 app.set("view engine", "ejs");
 
 // Middleware to parse JSON and URL-encoded bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
+
+// Increase timeout for long-running operations
+app.use((req, res, next) => {
+  res.setTimeout(600000); // 10 minutes for import operations
+  next();
+});
+
+// Add memory management middleware
+app.use((req, res, next) => {
+  // Force garbage collection if memory usage is high
+  if (process.memoryUsage().heapUsed > 500 * 1024 * 1024) {
+    // 500MB
+    if (global.gc) {
+      global.gc();
+    }
+  }
+  next();
+});
 
 app.use(express.static(path.join(__dirname, "public")));
 

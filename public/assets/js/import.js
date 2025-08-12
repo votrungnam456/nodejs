@@ -240,6 +240,8 @@ class ImportManager {
       const res = await fetch(`/api/products`, {
         method: "POST",
         body: formData,
+        // Add timeout and better error handling
+        signal: AbortSignal.timeout(300000), // 5 minutes timeout
       });
 
       if (res.status === 200) {
@@ -248,29 +250,47 @@ class ImportManager {
 
         this.showLoading(false);
 
-        // // Display success results
-        // const results = {
-        //   success: true,
-        //   totalItems: data.data.itemCount,
-        //   processedItems: data.data.itemCount,
-        //   skippedItems: 0,
-        //   errors: [],
-        //   dataType: data.data.dataType,
-        //   importMode: "upload",
-        //   timestamp: new Date().toISOString(),
-        //   fileName: data.data.fileName,
-        //   fileSize: this.formatFileSize(data.data.fileSize),
-        // };
+        // Display success results
+        const results = {
+          success: true,
+          totalItems: data.data.total || 0,
+          processedItems: data.data.success || 0,
+          skippedItems: data.data.failed || 0,
+          errors: [],
+          dataType: "products",
+          importMode: "upload",
+          timestamp: new Date().toISOString(),
+          fileName: this.currentFile.name,
+          fileSize: this.formatFileSize(this.currentFile.size),
+        };
 
-        // this.displayResults(results);
-        this.showLoading(false);
+        this.displayResults(results);
+      } else if (res.status === 408) {
+        throw new Error(
+          "Request timeout - the operation took too long. Please try with a smaller file."
+        );
       } else {
         const errorData = await res.json();
+        console.log(errorData);
         throw new Error(errorData.message || "Upload failed");
       }
     } catch (error) {
       this.showLoading(false);
-      this.showError("Upload failed: " + error.message);
+      if (error.name === "AbortError") {
+        this.showError(
+          "Upload timeout: The operation took too long. Please try with a smaller file or check your connection."
+        );
+      } else if (
+        error.name === "TypeError" &&
+        error.message.includes("fetch")
+      ) {
+        this.showError(
+          "Connection refused: Server might be down or overloaded. Please try again later."
+        );
+      } else {
+        this.showError("Upload failed: " + error.message);
+      }
+      console.error("Upload error details:", error);
     }
   }
 
