@@ -26,6 +26,12 @@ const timeout = (ms) => {
   };
 };
 
+// Memory monitoring helper
+const logMemoryUsage = () => {
+  const used = process.memoryUsage();
+  console.log(`💾 Memory usage: ${Math.round(used.heapUsed / 1024 / 1024)}MB heap, ${Math.round(used.rss / 1024 / 1024)}MB RSS`);
+};
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -161,23 +167,37 @@ router.post(
         message: "No file uploaded",
       });
     }
-    const batchSize = 3; // test với batch nhỏ
+    console.log("file", req.file);
+    const batchSize = 50; // Tăng batch size để giảm số lượng operations
     let batch = [];
     let successCount = 0;
     let failedCount = 0;
     let streamEnded = false;
 
-    const queue = new PQueue({ concurrency: 1 }); // chỉ xử lý 1 batch cùng lúc
+    const queue = new PQueue({ 
+      concurrency: 3, // Tăng concurrency để xử lý nhiều batch cùng lúc
+      timeout: 30000, // Timeout 30 giây cho mỗi batch
+      retry: 2 // Retry 2 lần nếu fail
+    });
 
     const processBatch = async (batchData) => {
-      console.log("xu ly batch");
       if (batchData.length === 0) return;
       try {
-        await Product.insertMany(batchData, { ordered: false });
+        console.log(`Processing batch with ${batchData.length} records`);
+        await Product.insertMany(batchData, { 
+          ordered: false,
+          lean: true // Sử dụng lean để tăng performance
+        });
         successCount += batchData.length;
+        console.log(`✅ Batch processed successfully: ${batchData.length} records`);
       } catch (err) {
-        console.error("Batch insert error:", err.message);
+        console.error("❌ Batch insert error:", err.message);
         failedCount += batchData.length;
+        
+        // Log chi tiết lỗi nếu có
+        if (err.writeErrors) {
+          console.error("Write errors:", err.writeErrors.length);
+        }
       }
     };
 
@@ -187,52 +207,77 @@ router.post(
     pipeline(fileStream, jsonStream, (err) => {
       if (err) {
         console.error("❌ Pipeline failed:", err);
+        clearInterval(progressInterval);
+        clearInterval(checkFinish);
+        fs.unlinkSync(req.file.path);
         return res
           .status(500)
-          .json({ success: false, message: "Failed to process file" });
+          .json({ success: false, message: "Failed to process file", error: err.message });
       }
     });
+
+    let totalProcessed = 0;
+    const startTime = Date.now();
 
     jsonStream.on("data", ({ value }) => {
       if (!value._source) {
         failedCount++;
+        totalProcessed++;
         return;
       }
 
       batch.push(value._source);
 
       if (batch.length >= batchSize) {
-        const batchToInsert = batch;
+        const batchToInsert = [...batch]; // Clone array để tránh race condition
         batch = [];
         queue.add(() => processBatch(batchToInsert));
       }
     });
 
     jsonStream.on("end", () => {
+      console.log("📁 File reading completed, processing remaining batches...");
       // xử lý batch cuối
       if (batch.length > 0) {
-        const lastBatch = batch;
+        const lastBatch = [...batch];
         batch = [];
         queue.add(() => processBatch(lastBatch));
       }
       streamEnded = true;
     });
 
+    // Monitoring progress
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      console.log(`📊 Progress: ${successCount + failedCount} processed, ${queue.pending} pending, ${elapsed}ms elapsed`);
+      logMemoryUsage();
+    }, 5000);
+
     // Khi queue trống và stream đã hết → trả response
     const checkFinish = setInterval(() => {
       if (streamEnded && queue.size === 0 && queue.pending === 0) {
         clearInterval(checkFinish);
+        clearInterval(progressInterval);
+        
+        const totalTime = Date.now() - startTime;
         fs.unlinkSync(req.file.path);
+        
         console.log(
-          `✅ Import completed: ${successCount} success, ${failedCount} failed`
+          `✅ Import completed in ${totalTime}ms: ${successCount} success, ${failedCount} failed`
         );
+        
         res.json({
           success: true,
           message: "Import completed",
-          data: { successCount, failedCount },
+          data: { 
+            successCount, 
+            failedCount, 
+            totalTime: `${totalTime}ms`,
+            averageTimePerRecord: totalTime / (successCount + failedCount)
+          },
         });
       }
-    }, 200);
+    }, 500); // Giảm interval để response nhanh hơn
   }
 );
 
