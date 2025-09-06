@@ -401,8 +401,75 @@ class ProductManager {
   }
 }
 
-// Initialize the product manager when the page loads
+// Tab Management
+class TabManager {
+  constructor() {
+    this.currentTab = "products";
+    this.init();
+  }
+
+  init() {
+    this.bindTabEvents();
+    this.checkUrlParams();
+  }
+
+  checkUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get("tab");
+
+    if (tabParam === "import") {
+      this.switchTab("import");
+    }
+  }
+
+  bindTabEvents() {
+    const productsTab = document.getElementById("productsTab");
+    const importTab = document.getElementById("importTab");
+    const productsContent = document.getElementById("productsContent");
+    const importContent = document.getElementById("importContent");
+
+    if (productsTab && importTab) {
+      productsTab.addEventListener("click", () => {
+        this.switchTab("products");
+      });
+
+      importTab.addEventListener("click", () => {
+        this.switchTab("import");
+      });
+    }
+  }
+
+  switchTab(tabName) {
+    const productsTab = document.getElementById("productsTab");
+    const importTab = document.getElementById("importTab");
+    const productsContent = document.getElementById("productsContent");
+    const importContent = document.getElementById("importContent");
+
+    // Remove active class from all tabs and content
+    [productsTab, importTab].forEach((tab) => {
+      if (tab) tab.classList.remove("active");
+    });
+    [productsContent, importContent].forEach((content) => {
+      if (content) content.classList.remove("active");
+    });
+
+    // Add active class to selected tab and content
+    if (tabName === "products") {
+      if (productsTab) productsTab.classList.add("active");
+      if (productsContent) productsContent.classList.add("active");
+    } else if (tabName === "import") {
+      if (importTab) importTab.classList.add("active");
+      if (importContent) importContent.classList.add("active");
+    }
+
+    this.currentTab = tabName;
+  }
+}
+
+// Initialize the product manager and tab manager when the page loads
 let productManager;
+let tabManager;
 document.addEventListener("DOMContentLoaded", () => {
   productManager = new ProductManager();
+  tabManager = new TabManager();
 });

@@ -1,0 +1,8 @@
+[
+{"count":5,"date":"2023-02-10T07:05:40+00:00"},
+{"_source":{"name":"Coffee Makers","slug":"Coffee-Makers"},"_id":"c8272d85162721a97661d20d097d1dce"},
+{"_source":{"name":"TVs","slug":"TVs"},"_id":"4f052dcc42b4365c457a1d77474450bd"},
+{"_source":{"name":"Ink Cartridges","slug":"Ink-Cartridges"},"_id":"8eb92a97504a0622c82b850bd2a84ef1"},
+{"_source":{"name":"Carafes, Jugs & Bottles","slug":"Carafes-Jugs-Bottles"},"_id":"17afd11e7752de5e6d7e10d421398c21"},
+{"_source":{"name":"Video Games","slug":"Video-Games"},"_id":"0115045288de729a484eb8860f15bcab"}
+]

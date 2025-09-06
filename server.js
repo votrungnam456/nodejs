@@ -10,6 +10,7 @@ const path = require("path");
 const viewRoutes = require("./routes/views");
 const apiUserRoutes = require("./routes/api/user.js");
 const apiProductRoutes = require("./routes/api/product.js");
+const apiCategoryRoutes = require("./routes/api/category.js");
 
 require("dotenv").config();
 
@@ -54,6 +55,7 @@ connectDB
 // Use route files
 app.use("/api", apiUserRoutes);
 app.use("/api", apiProductRoutes);
+app.use("/api", apiCategoryRoutes);
 app.use("/", viewRoutes);
 
 app.listen(port, hostname, () => {

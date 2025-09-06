@@ -24,15 +24,17 @@ router.get("/profile", (req, res) => {
 
 // Products route
 router.get("/products", (req, res) => {
-  res.render("products.ejs");
-});
-
-// Import route
-router.get("/import", (req, res) => {
-  res.render("import.ejs", {
+  res.render("products.ejs", {
     BASE_API_URL: process.env.BASE_API_URL,
   });
 });
+
+// Import route - render import page
+// router.get("/import", (req, res) => {
+//   res.render("import.ejs", {
+//     BASE_API_URL: process.env.BASE_API_URL,
+//   });
+// });
 
 // Test routes for different error types
 router.get("/error/404", (req, res, next) => {

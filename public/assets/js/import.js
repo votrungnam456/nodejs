@@ -237,7 +237,25 @@ class ImportManager {
       console.log("Uploading file:", this.currentFile.name);
       console.log("File size:", this.currentFile.size);
 
-      const res = await fetch(`/api/products`, {
+      // Determine the API endpoint based on data type
+      const dataType = document.getElementById("dataType").value;
+      let apiEndpoint = "/api/products"; // default
+
+      if (dataType === "categories") {
+        apiEndpoint = "/api/categories/import";
+      } else if (dataType === "products") {
+        apiEndpoint = "/api/products";
+      } else if (dataType === "auto") {
+        // Auto-detect based on file content
+        const detectedType = this.detectDataType(this.jsonData);
+        if (detectedType === "categories") {
+          apiEndpoint = "/api/categories/import";
+        } else {
+          apiEndpoint = "/api/products";
+        }
+      }
+
+      const res = await fetch(apiEndpoint, {
         method: "POST",
         body: formData,
         // Add timeout and better error handling
@@ -253,17 +271,18 @@ class ImportManager {
         // Display success results
         const results = {
           success: true,
-          totalItems: data.data.total || 0,
-          processedItems: data.data.success || 0,
-          skippedItems: data.data.failed || 0,
+          totalItems:
+            (data.data.successCount || 0) + (data.data.failedCount || 0),
+          processedItems: data.data.successCount || 0,
+          skippedItems: data.data.failedCount || 0,
           errors: [],
-          dataType: "products",
+          dataType:
+            dataType === "auto" ? this.detectDataType(this.jsonData) : dataType,
           importMode: "upload",
           timestamp: new Date().toISOString(),
           fileName: this.currentFile.name,
           fileSize: this.formatFileSize(this.currentFile.size),
         };
-
         this.displayResults(results);
       } else if (res.status === 408) {
         throw new Error(
@@ -385,14 +404,41 @@ class ImportManager {
 
   detectDataType(data) {
     if (Array.isArray(data)) {
-      if (data.length > 0 && data[0].name && data[0].price) {
-        return "products";
-      } else if (data.length > 0 && data[0].username && data[0].email) {
-        return "users";
+      if (data.length > 0) {
+        const firstItem = data[0];
+
+        // Check for category structure (has _source with name and slug)
+        if (
+          firstItem._source &&
+          firstItem._source.name &&
+          firstItem._source.slug
+        ) {
+          return "categories";
+        }
+
+        // Check for product structure
+        if (firstItem.name && firstItem.price) {
+          return "products";
+        }
+
+        // Check for user structure
+        if (firstItem.username && firstItem.email) {
+          return "users";
+        }
+
+        // Check for product structure with _source
+        if (
+          firstItem._source &&
+          (firstItem._source.title || firstItem._source.name) &&
+          firstItem._source.sku
+        ) {
+          return "products";
+        }
       }
       return "array";
     } else if (typeof data === "object") {
       if (data.products) return "products";
+      if (data.categories) return "categories";
       if (data.users) return "users";
       return "object";
     }
