@@ -29,6 +29,14 @@ router.get("/products", (req, res) => {
   });
 });
 
+// Edit product route
+router.get("/products/edit/:id", (req, res) => {
+  res.render("edit-product.ejs", {
+    BASE_API_URL: process.env.BASE_API_URL,
+    productId: req.params.id,
+  });
+});
+
 // Import route - render import page
 // router.get("/import", (req, res) => {
 //   res.render("import.ejs", {

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="description" content="Edit product information">
+    <meta name="theme-color" content="#667eea">
+    <title>Edit Product - Your Store</title>
+    <link rel="stylesheet" href="/assets/css/products.css">
+    <link rel="stylesheet" href="/assets/css/edit-product.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">
+                <i class="fas fa-shopping-bag"></i>
+                Product Store
+            </h1>
+            <nav class="nav">
+                <a href="/homepage" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Home
+                </a>
+                <a href="/products" class="nav-link">
+                    <i class="fas fa-list"></i>
+                    Products
+                </a>
+                <a href="/profile" class="nav-link">
+                    <i class="fas fa-user"></i>
+                    Profile
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="edit-product-container">
+                <!-- Header Section -->
+                <div class="edit-header">
+                    <div class="header-content">
+                        <div class="header-left">
+                            <button class="btn btn-secondary" onclick="goBack()">
+                                <i class="fas fa-arrow-left"></i>
+                                Back to Products
+                            </button>
+                            <h1 class="page-title">
+                                <i class="fas fa-edit"></i>
+                                Edit Product
+                            </h1>
+                        </div>
+                        <div class="header-right">
+                            <div class="product-id">
+                                <span class="label">Product ID:</span>
+                                <span id="productId" class="value">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Loading product information...</p>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="error-message hidden">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="errorText">Failed to load product information</span>
+                </div>
+
+                <!-- Edit Form -->
+                <form id="editProductForm" class="edit-form hidden">
+                    <div class="form-grid">
+                        <!-- Left Column -->
+                        <div class="form-column">
+                            <!-- Basic Information -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-info-circle"></i>
+                                    Basic Information
+                                </h3>
+                                
+                                <div class="form-group">
+                                    <label for="title" class="form-label">
+                                        Product Title <span class="required">*</span>
+                                    </label>
+                                    <input type="text" id="title" name="title" class="form-input" required>
+                                    <div class="form-error" id="titleError"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="sku" class="form-label">SKU</label>
+                                    <input type="text" id="sku" name="sku" class="form-input">
+                                    <div class="form-error" id="skuError"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="ean" class="form-label">EAN Code</label>
+                                    <input type="text" id="ean" name="ean" class="form-input">
+                                    <div class="form-error" id="eanError"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="category" class="form-label">Main Category</label>
+                                    <input type="text" id="category" name="category" class="form-input" placeholder="Enter category name">
+                                    <div class="form-error" id="categoryError"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="url" class="form-label">Product URL</label>
+                                    <input type="url" id="url" name="url" class="form-input" placeholder="https://example.com/product">
+                                    <div class="form-error" id="urlError"></div>
+                                </div>
+                            </div>
+
+                            <!-- Stock Information -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-boxes"></i>
+                                    Stock Information
+                                </h3>
+                                
+                                <div class="form-group">
+                                    <label for="stock" class="form-label">Stock Quantity</label>
+                                    <input type="number" id="stock" name="stock" class="form-input" min="0" value="999">
+                                    <div class="form-error" id="stockError"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="stockstatus" class="form-label">Stock Status</label>
+                                    <select id="stockstatus" name="stockstatus" class="form-select">
+                                        <option value="1">In Stock</option>
+                                        <option value="0">Out of Stock</option>
+                                    </select>
+                                    <div class="form-error" id="stockstatusError"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="stock_flag" class="form-label">Stock Flag</label>
+                                    <select id="stock_flag" name="stock_flag" class="form-select">
+                                        <option value="1">Available</option>
+                                        <option value="0">Unavailable</option>
+                                    </select>
+                                    <div class="form-error" id="stock_flagError"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="form-column">
+                            <!-- Product Status -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-toggle-on"></i>
+                                    Product Status
+                                </h3>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Product Status</label>
+                                    <div class="toggle-group">
+                                        <label class="toggle-label">
+                                            <input type="radio" name="active" value="true" class="toggle-radio">
+                                            <span class="toggle-text active">Active</span>
+                                        </label>
+                                        <label class="toggle-label">
+                                            <input type="radio" name="active" value="false" class="toggle-radio">
+                                            <span class="toggle-text inactive">Inactive</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-error" id="activeError"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" id="is_variant" name="is_variant" class="form-checkbox">
+                                        <span class="checkbox-text">Is Variant Product</span>
+                                    </label>
+                                    <div class="form-error" id="is_variantError"></div>
+                                </div>
+                            </div>
+
+                            <!-- Product Image -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-image"></i>
+                                    Product Image
+                                </h3>
+                                
+                                <div class="form-group">
+                                    <label for="image" class="form-label">Image URL</label>
+                                    <input type="url" id="image" name="image" class="form-input" placeholder="https://example.com/image.jpg">
+                                    <div class="form-error" id="imageError"></div>
+                                </div>
+
+                                <div class="image-preview">
+                                    <div id="imagePreview" class="preview-container">
+                                        <i class="fas fa-image preview-placeholder"></i>
+                                        <span class="preview-text">No image selected</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Descriptions -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-align-left"></i>
+                                    Descriptions
+                                </h3>
+                                
+                                <div class="form-group">
+                                    <label for="description" class="form-label">Short Description</label>
+                                    <textarea id="description" name="description" class="form-textarea" rows="3" placeholder="Brief product description"></textarea>
+                                    <div class="form-error" id="descriptionError"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="description_long" class="form-label">Long Description</label>
+                                    <textarea id="description_long" name="description_long" class="form-textarea" rows="5" placeholder="Detailed product description"></textarea>
+                                    <div class="form-error" id="description_longError"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="goBack()">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="resetForm()">
+                            <i class="fas fa-undo"></i>
+                            Reset
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="saveBtn">
+                            <i class="fas fa-save"></i>
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-check-circle"></i>
+                    Success
+                </h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Product updated successfully!</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="goBack()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error
+                </h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="errorModalText">Failed to update product</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeErrorModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Product Store. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.BASE_API_URL = '<%= BASE_API_URL %>';
+        window.PRODUCT_ID = '<%= productId %>';
+    </script>
+    <script src="/assets/js/edit-product.js"></script>
+</body>
+</html>

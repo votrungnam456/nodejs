@@ -150,12 +150,6 @@ class ProductManager {
           </div>
         </td>
         <td>
-          <div class="table-sku">${product.sku || "N/A"}</div>
-        </td>
-        <td>
-          <div class="table-ean">${product.ean || "N/A"}</div>
-        </td>
-        <td>
           <div class="table-category">${categoryText}</div>
         </td>
         <td>
@@ -398,8 +392,8 @@ class ProductManager {
   }
 
   editProduct(productId) {
-    // This could navigate to an edit page or open an edit modal
-    alert(`Chỉnh sửa sản phẩm ${productId}`);
+    // Navigate to edit product page
+    window.location.href = `/products/edit/${productId}`;
   }
 
   async deleteProduct(productId) {
