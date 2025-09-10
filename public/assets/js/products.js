@@ -1,12 +1,8 @@
 class ProductManager {
   constructor() {
     this.currentPage = 1;
-    this.productsPerPage = 12;
+    this.productsPerPage = 20;
     this.currentFilters = {
-      search: "",
-      category: "all",
-      minPrice: "",
-      maxPrice: "",
       sortBy: "createdAt",
       sortOrder: "desc",
     };
@@ -20,103 +16,51 @@ class ProductManager {
   }
 
   bindEvents() {
-    // Search functionality
-    const searchInput = document.getElementById("searchInput");
-    const searchBtn = document.getElementById("searchBtn");
-
-    searchInput.addEventListener(
-      "input",
-      this.debounce(() => {
-        this.currentFilters.search = searchInput.value;
-        this.currentPage = 1;
-        this.loadProducts();
-      }, 500)
-    );
-
-    searchBtn.addEventListener("click", () => {
-      this.currentFilters.search = searchInput.value;
-      this.currentPage = 1;
-      this.loadProducts();
-    });
-
-    // Filter functionality
-    const categoryFilter = document.getElementById("categoryFilter");
-    const minPriceInput = document.getElementById("minPrice");
-    const maxPriceInput = document.getElementById("maxPrice");
-    const sortBySelect = document.getElementById("sortBy");
-
-    categoryFilter.addEventListener("change", () => {
-      this.currentFilters.category = categoryFilter.value;
-      this.currentPage = 1;
-      this.loadProducts();
-    });
-
-    minPriceInput.addEventListener(
-      "input",
-      this.debounce(() => {
-        this.currentFilters.minPrice = minPriceInput.value;
-        this.currentPage = 1;
-        this.loadProducts();
-      }, 500)
-    );
-
-    maxPriceInput.addEventListener(
-      "input",
-      this.debounce(() => {
-        this.currentFilters.maxPrice = maxPriceInput.value;
-        this.currentPage = 1;
-        this.loadProducts();
-      }, 500)
-    );
-
-    sortBySelect.addEventListener("change", () => {
-      const value = sortBySelect.value;
-      if (value.startsWith("-")) {
-        this.currentFilters.sortBy = value.substring(1);
-        this.currentFilters.sortOrder = "desc";
-      } else {
-        this.currentFilters.sortBy = value;
-        this.currentFilters.sortOrder = "asc";
-      }
-      this.currentPage = 1;
-      this.loadProducts();
-    });
-
-    // Clear filters
-    const clearFiltersBtn = document.getElementById("clearFilters");
-    clearFiltersBtn.addEventListener("click", () => {
-      this.clearFilters();
-    });
-
     // Pagination
     const prevPageBtn = document.getElementById("prevPage");
     const nextPageBtn = document.getElementById("nextPage");
 
-    prevPageBtn.addEventListener("click", () => {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        this.loadProducts();
-      }
-    });
+    if (prevPageBtn) {
+      prevPageBtn.addEventListener("click", () => {
+        if (this.currentPage > 1) {
+          this.currentPage--;
+          this.loadProducts();
+        }
+      });
+    }
 
-    nextPageBtn.addEventListener("click", () => {
-      this.currentPage++;
-      this.loadProducts();
+    if (nextPageBtn) {
+      nextPageBtn.addEventListener("click", () => {
+        this.currentPage++;
+        this.loadProducts();
+      });
+    }
+
+    // Sorting
+    const sortableHeaders = document.querySelectorAll(".sortable");
+    sortableHeaders.forEach((header) => {
+      header.addEventListener("click", () => {
+        this.handleSort(header);
+      });
     });
 
     // Modal functionality
     const modal = document.getElementById("productModal");
     const closeModal = document.querySelector(".close-modal");
 
-    closeModal.addEventListener("click", () => {
-      this.closeModal();
-    });
-
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) {
+    if (closeModal) {
+      closeModal.addEventListener("click", () => {
         this.closeModal();
-      }
-    });
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          this.closeModal();
+        }
+      });
+    }
 
     // Close modal with Escape key
     document.addEventListener("keydown", (e) => {
@@ -155,77 +99,100 @@ class ProductManager {
   }
 
   displayProducts(products) {
-    const productsGrid = document.getElementById("productsGrid");
+    const productsTableBody = document.getElementById("productsTableBody");
     const noProducts = document.getElementById("noProducts");
 
     if (products.length === 0) {
-      productsGrid.innerHTML = "";
+      productsTableBody.innerHTML = "";
       noProducts.classList.remove("hidden");
       return;
     }
 
     noProducts.classList.add("hidden");
 
-    productsGrid.innerHTML = products
-      .map((product) => this.createProductCard(product))
+    productsTableBody.innerHTML = products
+      .map((product) => this.createProductRow(product))
       .join("");
-
-    // Add click event to product cards
-    const productCards = productsGrid.querySelectorAll(".product-card");
-    productCards.forEach((card, index) => {
-      card.addEventListener("click", () => {
-        this.showProductModal(products[index]);
-      });
-    });
   }
 
-  createProductCard(product) {
-    const stars = this.generateStars(product.rating);
-    const stockStatus =
-      product.stock > 0
-        ? `<span class="product-stock">In Stock: ${product.stock}</span>`
-        : '<span class="product-stock" style="color: #dc3545;">Out of Stock</span>';
+  createProductRow(product) {
+    const imageHtml =
+      product.image && product.image !== "/assets/images/default-product.png"
+        ? `<img src="${product.image}" alt="${
+            product.title || "Product"
+          }" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+         <i class="fas fa-image" style="display: none;"></i>`
+        : '<i class="fas fa-image"></i>';
+
+    const statusClass = product.active ? "active" : "inactive";
+    const statusText = product.active ? "Hoạt động" : "Không hoạt động";
+
+    const stockClass = product.stock > 0 ? "in-stock" : "out-of-stock";
+    const stockText = product.stock > 0 ? product.stock : "Hết hàng";
+
+    const categoryText = product.categories?.main || "Chưa phân loại";
+    const descriptionText =
+      product.description || product.description_long || "Không có mô tả";
+    const createdAt = new Date(product.createdAt).toLocaleDateString("vi-VN");
 
     return `
-            <div class="product-card" data-product-id="${product._id}">
-                <div class="product-image">
-                    ${
-                      product.image &&
-                      product.image !== "/assets/images/default-product.png"
-                        ? `<img src="${product.image}" alt="${product.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                         <i class="fas fa-image" style="display: none;"></i>`
-                        : '<i class="fas fa-image"></i>'
-                    }
-                </div>
-                <div class="product-info">
-                    <div class="product-category">${product.category}</div>
-                    <h3 class="product-name">${product.name}</h3>
-                    <p class="product-description">${product.description}</p>
-                    <div class="product-meta">
-                        <div class="product-price">$${product.price.toFixed(
-                          2
-                        )}</div>
-                        <div class="product-rating">
-                            ${stars}
-                            <span>(${product.reviews})</span>
-                        </div>
-                    </div>
-                    ${stockStatus}
-                    <div class="product-actions">
-                        <button class="btn btn-primary" onclick="event.stopPropagation(); productManager.addToCart('${
-                          product._id
-                        }')">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
-                        </button>
-                        <button class="btn btn-secondary" onclick="event.stopPropagation(); productManager.viewDetails('${
-                          product._id
-                        }')">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
+      <tr data-product-id="${product._id}">
+        <td>
+          <div class="table-image">
+            ${imageHtml}
+          </div>
+        </td>
+        <td>
+          <div class="table-title" title="${
+            product.title || "Không có tiêu đề"
+          }">
+            ${product.title || "Không có tiêu đề"}
+          </div>
+        </td>
+        <td>
+          <div class="table-sku">${product.sku || "N/A"}</div>
+        </td>
+        <td>
+          <div class="table-ean">${product.ean || "N/A"}</div>
+        </td>
+        <td>
+          <div class="table-category">${categoryText}</div>
+        </td>
+        <td>
+          <div class="table-status ${statusClass}">${statusText}</div>
+        </td>
+        <td>
+          <div class="table-stock ${stockClass}">${stockText}</div>
+        </td>
+        <td>
+          <div class="table-description" title="${descriptionText}">
+            ${descriptionText}
+          </div>
+        </td>
+        <td>
+          <div class="table-date">${createdAt}</div>
+        </td>
+        <td>
+          <div class="table-actions">
+            <button class="table-btn table-btn-primary" onclick="productManager.viewProduct('${
+              product._id
+            }')" title="Xem chi tiết">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="table-btn table-btn-secondary" onclick="productManager.editProduct('${
+              product._id
+            }')" title="Chỉnh sửa">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="table-btn table-btn-danger" onclick="productManager.deleteProduct('${
+              product._id
+            }')" title="Xóa">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
   }
 
   generateStars(rating) {
@@ -268,22 +235,55 @@ class ProductManager {
     productsCount.textContent = count;
   }
 
+  handleSort(header) {
+    const sortField = header.dataset.sort;
+    const currentSortBy = this.currentFilters.sortBy;
+    const currentSortOrder = this.currentFilters.sortOrder;
+
+    // Determine new sort order
+    let newSortOrder = "asc";
+    if (currentSortBy === sortField && currentSortOrder === "asc") {
+      newSortOrder = "desc";
+    } else if (currentSortBy === sortField && currentSortOrder === "desc") {
+      newSortOrder = "asc";
+    }
+
+    // Update filters
+    this.currentFilters.sortBy = sortField;
+    this.currentFilters.sortOrder = newSortOrder;
+
+    // Update UI
+    this.updateSortUI(header, newSortOrder);
+
+    // Reset to first page and reload
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  updateSortUI(activeHeader, sortOrder) {
+    // Remove active class and reset icons from all headers
+    const allHeaders = document.querySelectorAll(".sortable");
+    allHeaders.forEach((header) => {
+      header.classList.remove("active");
+      const icon = header.querySelector(".sort-icon");
+      icon.className = "fas fa-sort sort-icon";
+    });
+
+    // Add active class and update icon for current header
+    activeHeader.classList.add("active");
+    const activeIcon = activeHeader.querySelector(".sort-icon");
+    if (sortOrder === "asc") {
+      activeIcon.className = "fas fa-sort-up sort-icon";
+    } else {
+      activeIcon.className = "fas fa-sort-down sort-icon";
+    }
+  }
+
   clearFilters() {
     this.currentFilters = {
-      search: "",
-      category: "all",
-      minPrice: "",
-      maxPrice: "",
       sortBy: "createdAt",
       sortOrder: "desc",
     };
-
-    // Reset form elements
-    document.getElementById("searchInput").value = "";
-    document.getElementById("categoryFilter").value = "all";
-    document.getElementById("minPrice").value = "";
-    document.getElementById("maxPrice").value = "";
-    document.getElementById("sortBy").value = "createdAt";
 
     this.currentPage = 1;
     this.loadProducts();
@@ -303,72 +303,75 @@ class ProductManager {
   }
 
   showError(message) {
-    const productsGrid = document.getElementById("productsGrid");
-    productsGrid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #dc3545;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                <h3>Error</h3>
-                <p>${message}</p>
-            </div>
-        `;
+    const productsTableBody = document.getElementById("productsTableBody");
+    productsTableBody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align: center; padding: 2rem; color: #dc3545;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+          <h3>Lỗi</h3>
+          <p>${message}</p>
+        </td>
+      </tr>
+    `;
   }
 
   async showProductModal(product) {
     const modal = document.getElementById("productModal");
     const modalContent = document.getElementById("modalContent");
-    const stars = this.generateStars(product.rating);
+
+    const imageHtml =
+      product.image && product.image !== "/assets/images/default-product.png"
+        ? `<img src="${product.image}" alt="${
+            product.title || "Product"
+          }" style="width: 100%; height: 100%; object-fit: cover;">`
+        : '<i class="fas fa-image" style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 4rem; color: #ddd;"></i>';
+
+    const statusText = product.active ? "Hoạt động" : "Không hoạt động";
+    const stockText =
+      product.stock > 0 ? `${product.stock} đơn vị` : "Hết hàng";
+    const categoryText = product.categories?.main || "Chưa phân loại";
+    const createdAt = new Date(product.createdAt).toLocaleString("vi-VN");
+    const updatedAt = new Date(product.updatedAt).toLocaleString("vi-VN");
 
     modalContent.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
-                <div class="product-image" style="height: 300px; border-radius: 10px; overflow: hidden;">
-                    ${
-                      product.image &&
-                      product.image !== "/assets/images/default-product.png"
-                        ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-                        : '<i class="fas fa-image" style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 4rem; color: #ddd;"></i>'
-                    }
-                </div>
-                <div>
-                    <div class="product-category">${product.category}</div>
-                    <h2 class="product-name" style="font-size: 1.5rem; margin-bottom: 1rem;">${
-                      product.name
-                    }</h2>
-                    <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.6;">${
-                      product.description
-                    }</p>
-                    
-                    <div style="margin-bottom: 1.5rem;">
-                        <div style="font-size: 2rem; font-weight: bold; color: #28a745; margin-bottom: 0.5rem;">
-                            $${product.price.toFixed(2)}
-                        </div>
-                        <div class="product-rating" style="margin-bottom: 0.5rem;">
-                            ${stars}
-                            <span style="color: #666;">(${
-                              product.reviews
-                            } reviews)</span>
-                        </div>
-                        <div style="color: #666; font-size: 0.9rem;">
-                            ${
-                              product.stock > 0
-                                ? `In Stock: ${product.stock} units`
-                                : "Out of Stock"
-                            }
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem;">
-                        <button class="btn btn-primary" style="flex: 1;" onclick="productManager.addToCart('${
-                          product._id
-                        }')">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
-                        </button>
-                        <button class="btn btn-secondary" style="flex: 1;" onclick="productManager.closeModal()">
-                            Close
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
+        <div class="product-image" style="height: 300px; border-radius: 10px; overflow: hidden;">
+          ${imageHtml}
+        </div>
+        <div>
+          <div class="table-category" style="margin-bottom: 0.5rem;">${categoryText}</div>
+          <h2 class="product-name" style="font-size: 1.5rem; margin-bottom: 1rem;">
+            ${product.title || "Không có tiêu đề"}
+          </h2>
+          
+          <div style="margin-bottom: 1rem;">
+            <strong>SKU:</strong> ${product.sku || "N/A"}<br>
+            <strong>EAN:</strong> ${product.ean || "N/A"}<br>
+            <strong>Trạng thái:</strong> ${statusText}<br>
+            <strong>Tồn kho:</strong> ${stockText}
+          </div>
+          
+          <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.6;">
+            ${
+              product.description ||
+              product.description_long ||
+              "Không có mô tả"
+            }
+          </p>
+          
+          <div style="margin-bottom: 1.5rem; font-size: 0.9rem; color: #666;">
+            <div><strong>Ngày tạo:</strong> ${createdAt}</div>
+            <div><strong>Cập nhật lần cuối:</strong> ${updatedAt}</div>
+          </div>
+          
+          <div style="display: flex; gap: 1rem;">
+            <button class="btn btn-secondary" style="flex: 1;" onclick="productManager.closeModal()">
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
 
     modal.classList.remove("hidden");
   }
@@ -378,14 +381,46 @@ class ProductManager {
     modal.classList.add("hidden");
   }
 
-  addToCart(productId) {
-    // This is a placeholder for cart functionality
-    alert(`Product ${productId} added to cart!`);
+  async viewProduct(productId) {
+    try {
+      const response = await fetch(`/api/products/${productId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        this.showProductModal(data.data);
+      } else {
+        alert("Không thể tải thông tin sản phẩm");
+      }
+    } catch (error) {
+      console.error("Error loading product:", error);
+      alert("Lỗi khi tải thông tin sản phẩm");
+    }
   }
 
-  viewDetails(productId) {
-    // This could navigate to a detailed product page
-    alert(`Viewing details for product ${productId}`);
+  editProduct(productId) {
+    // This could navigate to an edit page or open an edit modal
+    alert(`Chỉnh sửa sản phẩm ${productId}`);
+  }
+
+  async deleteProduct(productId) {
+    if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
+      try {
+        const response = await fetch(`/api/products/${productId}`, {
+          method: "DELETE",
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          alert("Xóa sản phẩm thành công");
+          this.loadProducts(); // Reload the table
+        } else {
+          alert("Không thể xóa sản phẩm");
+        }
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        alert("Lỗi khi xóa sản phẩm");
+      }
+    }
   }
 
   debounce(func, wait) {

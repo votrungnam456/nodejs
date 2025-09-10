@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="description" content="Browse and manage products in our online store">
+    <meta name="theme-color" content="#667eea">
     <title>Product List - Your Store</title>
     <link rel="stylesheet" href="/assets/css/products.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -45,61 +47,6 @@
 
             <!-- Products Tab Content -->
             <div id="productsContent" class="tab-content active">
-                <!-- Search and Filter Section -->
-                <section class="filters-section">
-                <div class="search-container">
-                    <div class="search-box">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="searchInput" placeholder="Search products..." class="search-input">
-                        <button id="searchBtn" class="search-btn">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="filters-container">
-                    <div class="filter-group">
-                        <label for="categoryFilter" class="filter-label">Category:</label>
-                        <select id="categoryFilter" class="filter-select">
-                            <option value="all">All Categories</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Clothing">Clothing</option>
-                            <option value="Books">Books</option>
-                            <option value="Home & Garden">Home & Garden</option>
-                            <option value="Sports">Sports</option>
-                            <option value="Beauty">Beauty</option>
-                            <option value="Food">Food</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="priceRange" class="filter-label">Price Range:</label>
-                        <div class="price-inputs">
-                            <input type="number" id="minPrice" placeholder="Min" class="price-input">
-                            <span class="price-separator">-</span>
-                            <input type="number" id="maxPrice" placeholder="Max" class="price-input">
-                        </div>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="sortBy" class="filter-label">Sort By:</label>
-                        <select id="sortBy" class="filter-select">
-                            <option value="createdAt">Newest First</option>
-                            <option value="price">Price: Low to High</option>
-                            <option value="-price">Price: High to Low</option>
-                            <option value="name">Name: A to Z</option>
-                            <option value="-name">Name: Z to A</option>
-                            <option value="rating">Rating: High to Low</option>
-                        </select>
-                    </div>
-
-                    <button id="clearFilters" class="clear-filters-btn">
-                        <i class="fas fa-times"></i>
-                        Clear Filters
-                    </button>
-                </div>
-            </section>
 
             <!-- Loading Spinner -->
             <div id="loadingSpinner" class="loading-spinner hidden">
@@ -107,24 +54,66 @@
                 <p>Loading products...</p>
             </div>
 
-            <!-- Products Grid -->
+            <!-- Products Table -->
             <section class="products-section">
                 <div class="products-header">
-                    <h2 class="products-title">Our Products</h2>
+                    <h2 class="products-title">Danh sách sản phẩm</h2>
                     <div class="products-count">
-                        <span id="productsCount">0</span> products found
+                        <span id="productsCount">0</span> sản phẩm
                     </div>
                 </div>
 
-                <div id="productsGrid" class="products-grid">
-                    <!-- Products will be loaded here dynamically -->
+                <div class="table-container">
+                    <table id="productsTable" class="products-table">
+                        <thead>
+                            <tr>
+                                <th>Hình ảnh</th>
+                                <th class="sortable" data-sort="title">
+                                    Tiêu đề
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="sku">
+                                    SKU
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="ean">
+                                    EAN
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="category">
+                                    Danh mục
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="active">
+                                    Trạng thái
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="stock">
+                                    Tồn kho
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="description">
+                                    Mô tả
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable active" data-sort="createdAt">
+                                    Ngày tạo
+                                    <i class="fas fa-sort-down sort-icon"></i>
+                                </th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <!-- Products will be loaded here dynamically -->
+                        </tbody>
+                    </table>
                 </div>
 
                 <!-- No Products Message -->
                 <div id="noProducts" class="no-products hidden">
-                    <i class="fas fa-search"></i>
-                    <h3>No products found</h3>
-                    <p>Try adjusting your search criteria or filters</p>
+                    <i class="fas fa-box-open"></i>
+                    <h3>Không có sản phẩm nào</h3>
+                    <p>Chưa có sản phẩm nào trong hệ thống</p>
                 </div>
             </section>
 

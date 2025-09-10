@@ -29,7 +29,11 @@ const timeout = (ms) => {
 // Memory monitoring helper
 const logMemoryUsage = () => {
   const used = process.memoryUsage();
-  console.log(`💾 Memory usage: ${Math.round(used.heapUsed / 1024 / 1024)}MB heap, ${Math.round(used.rss / 1024 / 1024)}MB RSS`);
+  console.log(
+    `💾 Memory usage: ${Math.round(
+      used.heapUsed / 1024 / 1024
+    )}MB heap, ${Math.round(used.rss / 1024 / 1024)}MB RSS`
+  );
 };
 
 // Configure multer for file uploads
@@ -72,7 +76,7 @@ router.get("/products", async (req, res) => {
     } = req.query;
 
     // Build filter object
-    const filter = { isAvailable: true };
+    const filter = {};
 
     if (category && category !== "all") {
       filter.category = category;
@@ -91,10 +95,26 @@ router.get("/products", async (req, res) => {
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
 
-    // Build sort object
+    // Build sort object with field mapping
     const sort = {};
-    sort[sortBy] = sortOrder === "desc" ? -1 : 1;
 
+    // Map frontend field names to database field names
+    const fieldMapping = {
+      title: "title",
+      sku: "sku",
+      ean: "ean",
+      category: "categories.main",
+      active: "active",
+      stock: "stock",
+      description: "description",
+      createdAt: "createdAt",
+      updatedAt: "updatedAt",
+    };
+
+    const dbField = fieldMapping[sortBy] || sortBy;
+    sort[dbField] = sortOrder === "desc" ? -1 : 1;
+
+    console.log(filter);
     // Calculate skip value for pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -174,26 +194,28 @@ router.post(
     let failedCount = 0;
     let streamEnded = false;
 
-    const queue = new PQueue({ 
+    const queue = new PQueue({
       concurrency: 3, // Tăng concurrency để xử lý nhiều batch cùng lúc
       timeout: 30000, // Timeout 30 giây cho mỗi batch
-      retry: 2 // Retry 2 lần nếu fail
+      retry: 2, // Retry 2 lần nếu fail
     });
 
     const processBatch = async (batchData) => {
       if (batchData.length === 0) return;
       try {
         console.log(`Processing batch with ${batchData.length} records`);
-        await Product.insertMany(batchData, { 
+        await Product.insertMany(batchData, {
           ordered: false,
-          lean: true // Sử dụng lean để tăng performance
+          lean: true, // Sử dụng lean để tăng performance
         });
         successCount += batchData.length;
-        console.log(`✅ Batch processed successfully: ${batchData.length} records`);
+        console.log(
+          `✅ Batch processed successfully: ${batchData.length} records`
+        );
       } catch (err) {
         console.error("❌ Batch insert error:", err.message);
         failedCount += batchData.length;
-        
+
         // Log chi tiết lỗi nếu có
         if (err.writeErrors) {
           console.error("Write errors:", err.writeErrors.length);
@@ -210,9 +232,11 @@ router.post(
         clearInterval(progressInterval);
         clearInterval(checkFinish);
         fs.unlinkSync(req.file.path);
-        return res
-          .status(500)
-          .json({ success: false, message: "Failed to process file", error: err.message });
+        return res.status(500).json({
+          success: false,
+          message: "Failed to process file",
+          error: err.message,
+        });
       }
     });
 
@@ -249,7 +273,11 @@ router.post(
     // Monitoring progress
     const progressInterval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      console.log(`📊 Progress: ${successCount + failedCount} processed, ${queue.pending} pending, ${elapsed}ms elapsed`);
+      console.log(
+        `📊 Progress: ${successCount + failedCount} processed, ${
+          queue.pending
+        } pending, ${elapsed}ms elapsed`
+      );
       logMemoryUsage();
     }, 5000);
 
@@ -258,22 +286,22 @@ router.post(
       if (streamEnded && queue.size === 0 && queue.pending === 0) {
         clearInterval(checkFinish);
         clearInterval(progressInterval);
-        
+
         const totalTime = Date.now() - startTime;
         fs.unlinkSync(req.file.path);
-        
+
         console.log(
           `✅ Import completed in ${totalTime}ms: ${successCount} success, ${failedCount} failed`
         );
-        
+
         res.json({
           success: true,
           message: "Import completed",
-          data: { 
-            successCount, 
-            failedCount, 
+          data: {
+            successCount,
+            failedCount,
             totalTime: `${totalTime}ms`,
-            averageTimePerRecord: totalTime / (successCount + failedCount)
+            averageTimePerRecord: totalTime / (successCount + failedCount),
           },
         });
       }
