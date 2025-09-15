@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("loginForm");
   const loginBtn = document.getElementById("loginBtn");
   const btnText = loginBtn.querySelector(".btn-text");
@@ -6,8 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const errorMessage = document.getElementById("errorMessage");
   const successMessage = document.getElementById("successMessage");
 
-  // Function to show/hide loading state
-  function setLoading(isLoading) {
+  const setLoading = (isLoading) => {
     if (isLoading) {
       btnText.style.display = "none";
       loading.style.display = "inline-block";
@@ -17,10 +16,9 @@ document.addEventListener("DOMContentLoaded", function () {
       loading.style.display = "none";
       loginBtn.disabled = false;
     }
-  }
+  };
 
-  // Function to show messages
-  function showMessage(message, type) {
+  const showMessage = (message, type) => {
     errorMessage.style.display = "none";
     successMessage.style.display = "none";
 
@@ -31,12 +29,10 @@ document.addEventListener("DOMContentLoaded", function () {
       successMessage.textContent = message;
       successMessage.style.display = "block";
     }
-  }
+  };
 
-  // Function to call API
-  async function loginUser(username, password) {
+  const loginUser = async (username, password) => {
     try {
-      // Simulate API call - replace with your actual API endpoint
       const response = await fetch("/api/user/login", {
         method: "POST",
         headers: {
@@ -55,35 +51,29 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error("Login error:", error);
       throw error;
     }
-  }
+  };
 
-  // Function to call external API (JSONPlaceholder as example)
-  async function callExternalAPI() {
+  const callExternalAPI = async () => {
     try {
       const response = await fetch("/api/user");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log("External API data:", data);
       return data;
     } catch (error) {
-      console.error("External API error:", error);
       throw error;
     }
-  }
+  };
 
-  // Handle form submission
-  loginForm.addEventListener("submit", async function (e) {
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
 
-    // Basic validation
     if (!username || !password) {
       showMessage("Please fill in all fields", "error");
       return;
@@ -94,12 +84,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const data = await loginUser(username, password);
-      console.log("Login response:", data);
 
       if (data.status === 200) {
         showMessage("Login successful! Redirecting...", "success");
 
-        // Redirect to homepage after successful login
         setTimeout(() => {
           window.location.href = "/homepage";
         }, 1500);
@@ -107,7 +95,6 @@ document.addEventListener("DOMContentLoaded", function () {
         showMessage(data.message || "Login failed", "error");
       }
     } catch (error) {
-      console.error("Login error:", error);
       if (error.message.includes("HTTP error! status: 401")) {
         showMessage("Invalid username or password", "error");
       } else if (error.message.includes("HTTP error! status: 400")) {
@@ -120,7 +107,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Add some interactive features
   const inputs = document.querySelectorAll("input");
   inputs.forEach((input) => {
     input.addEventListener("focus", function () {
@@ -132,8 +118,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Auto-fill demo credentials for testing
-  document.addEventListener("keydown", function (e) {
+  document.addEventListener("keydown", (e) => {
     if (e.ctrlKey && e.key === "d") {
       document.getElementById("username").value = "admin";
       document.getElementById("password").value = "password123";

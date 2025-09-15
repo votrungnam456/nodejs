@@ -9,47 +9,31 @@ const StreamArray = require("stream-json/streamers/StreamArray");
 const PQueue = require("p-queue").default;
 
 // Add timeout middleware for this route
-const timeout = (ms) => {
-  return (req, res, next) => {
-    const timer = setTimeout(() => {
-      res.status(408).json({
-        success: false,
-        message: "Request timeout - operation took too long",
-      });
-    }, ms);
-
-    res.on("finish", () => {
-      clearTimeout(timer);
+const timeout = (ms) => (req, res, next) => {
+  const timer = setTimeout(() => {
+    res.status(408).json({
+      success: false,
+      message: "Request timeout - operation took too long",
     });
+  }, ms);
 
-    next();
-  };
-};
+  res.on("finish", () => {
+    clearTimeout(timer);
+  });
 
-// Memory monitoring helper
-const logMemoryUsage = () => {
-  const used = process.memoryUsage();
-  console.log(
-    `💾 Memory usage: ${Math.round(
-      used.heapUsed / 1024 / 1024
-    )}MB heap, ${Math.round(used.rss / 1024 / 1024)}MB RSS`
-  );
+  next();
 };
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Make sure this directory exists
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
+  destination: (req, file, cb) => cb(null, "uploads/"), // Make sure this directory exists
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 
 const upload = multer({
   storage: storage,
-  fileFilter: function (req, file, cb) {
-    // Accept only JSON files
+  // Accept only JSON files
+  fileFilter: (req, file, cb) => {
     if (
       file.mimetype === "application/json" ||
       file.originalname.endsWith(".json")
@@ -381,7 +365,6 @@ router.post("/categories/import", upload.single("file"), async (req, res) => {
         queue.pending
       } pending, ${elapsed}ms elapsed`
     );
-    logMemoryUsage();
   }, 5000);
 
   // Check when queue is empty and stream has ended

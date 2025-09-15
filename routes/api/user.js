@@ -19,8 +19,6 @@ router.post("/user/login", async (req, res, next) => {
       });
     }
 
-    console.log("Login attempt:", { username, password });
-
     const user = await User.findOne({ username: username });
     if (!user) {
       return res.status(401).json({
@@ -59,22 +57,6 @@ router.post("/user/login", async (req, res, next) => {
         email: user.email,
       },
     });
-    // // Demo login logic (replace with actual authentication)
-    // if (username === 'admin' && password === 'password123') {
-    //   res.json({
-    //     status: 200,
-    //     message: "Login successful",
-    //     user: {
-    //       username: username,
-    //       role: "admin"
-    //     }
-    //   });
-    // } else {
-    //   res.status(401).json({
-    //     status: 401,
-    //     message: "Invalid username or password"
-    //   });
-    // }
   } catch (error) {
     console.error("API Error:", error.message);
     res.status(500).json({

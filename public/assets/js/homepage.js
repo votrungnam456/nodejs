@@ -1,6 +1,5 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // Check authentication and load user data
-  async function checkAuth() {
+document.addEventListener("DOMContentLoaded", () => {
+  const checkAuth = async () => {
     try {
       const response = await fetch("/api/user/me");
       if (response.ok) {
@@ -20,32 +19,26 @@ document.addEventListener("DOMContentLoaded", function () {
       console.error("Auth check failed:", error);
       window.location.href = "/";
     }
-  }
+  };
 
-  // Logout functionality
-  document
-    .getElementById("logoutBtn")
-    .addEventListener("click", async function (e) {
-      e.preventDefault();
+  document.getElementById("logoutBtn").addEventListener("click", async (e) => {
+    e.preventDefault();
 
-      try {
-        const response = await fetch("/api/user/logout", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+    try {
+      const response = await fetch("/api/user/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-        if (response.ok) {
-          // Redirect to login page after logout
-          window.location.href = "/";
-        } else {
-          console.error("Logout failed");
-        }
-      } catch (error) {
-        console.error("Logout error:", error);
+      if (response.ok) {
+        window.location.href = "/";
       }
-    });
+    } catch (error) {
+      // Logout error - continue
+    }
+  });
 
   // Check authentication on page load
   checkAuth();

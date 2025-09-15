@@ -7,49 +7,34 @@ const path = require("path");
 const { pipeline } = require("stream");
 const StreamArray = require("stream-json/streamers/StreamArray");
 const PQueue = require("p-queue").default;
+const authMiddleware = require("../../middleware/auth");
 
 // Add timeout middleware for this route
-const timeout = (ms) => {
-  return (req, res, next) => {
-    const timer = setTimeout(() => {
-      res.status(408).json({
-        success: false,
-        message: "Request timeout - operation took too long",
-      });
-    }, ms);
-
-    res.on("finish", () => {
-      clearTimeout(timer);
+const timeout = (ms) => (req, res, next) => {
+  const timer = setTimeout(() => {
+    res.status(408).json({
+      success: false,
+      message: "Request timeout - operation took too long",
     });
+  }, ms);
 
-    next();
-  };
-};
+  res.on("finish", () => {
+    clearTimeout(timer);
+  });
 
-// Memory monitoring helper
-const logMemoryUsage = () => {
-  const used = process.memoryUsage();
-  console.log(
-    `💾 Memory usage: ${Math.round(
-      used.heapUsed / 1024 / 1024
-    )}MB heap, ${Math.round(used.rss / 1024 / 1024)}MB RSS`
-  );
+  next();
 };
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Make sure this directory exists
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 
 const upload = multer({
   storage: storage,
-  fileFilter: function (req, file, cb) {
-    // Accept only JSON files
+  // Accept only JSON files
+  fileFilter: (req, file, cb) => {
     if (
       file.mimetype === "application/json" ||
       file.originalname.endsWith(".json")
@@ -114,7 +99,6 @@ router.get("/products", async (req, res) => {
     const dbField = fieldMapping[sortBy] || sortBy;
     sort[dbField] = sortOrder === "desc" ? -1 : 1;
 
-    console.log(filter);
     // Calculate skip value for pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -178,6 +162,7 @@ router.get("/products/:id", async (req, res) => {
 // Create new product
 router.post(
   "/products",
+  authMiddleware,
   timeout(600000),
   upload.single("file"),
   async (req, res) => {
@@ -187,7 +172,6 @@ router.post(
         message: "No file uploaded",
       });
     }
-    console.log("file", req.file);
     const batchSize = 50; // Tăng batch size để giảm số lượng operations
     let batch = [];
     let successCount = 0;
@@ -215,11 +199,6 @@ router.post(
       } catch (err) {
         console.error("❌ Batch insert error:", err.message);
         failedCount += batchData.length;
-
-        // Log chi tiết lỗi nếu có
-        if (err.writeErrors) {
-          console.error("Write errors:", err.writeErrors.length);
-        }
       }
     };
 
@@ -278,7 +257,6 @@ router.post(
           queue.pending
         } pending, ${elapsed}ms elapsed`
       );
-      logMemoryUsage();
     }, 5000);
 
     // Khi queue trống và stream đã hết → trả response
@@ -310,7 +288,7 @@ router.post(
 );
 
 // Update product
-router.put("/products/:id", async (req, res) => {
+router.put("/products/:id", authMiddleware, async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -340,7 +318,7 @@ router.put("/products/:id", async (req, res) => {
 });
 
 // Delete product
-router.delete("/products/:id", async (req, res) => {
+router.delete("/products/:id", authMiddleware, async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
 

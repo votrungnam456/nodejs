@@ -24,15 +24,13 @@ app.use(cookieParser());
 
 // Increase timeout for long-running operations
 app.use((req, res, next) => {
-  res.setTimeout(600000); // 10 minutes for import operations
+  res.setTimeout(600000);
   next();
 });
 
 // Add memory management middleware
 app.use((req, res, next) => {
-  // Force garbage collection if memory usage is high
   if (process.memoryUsage().heapUsed > 500 * 1024 * 1024) {
-    // 500MB
     if (global.gc) {
       global.gc();
     }

@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   const profileForm = document.getElementById("profileForm");
   const updateBtn = document.getElementById("updateBtn");
   const btnText = updateBtn.querySelector(".btn-text");
@@ -7,8 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const successMessage = document.getElementById("successMessage");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  // Function to show/hide loading state
-  function setLoading(isLoading) {
+  const setLoading = (isLoading) => {
     if (isLoading) {
       btnText.style.display = "none";
       loading.style.display = "inline-block";
@@ -18,10 +17,9 @@ document.addEventListener("DOMContentLoaded", function () {
       loading.style.display = "none";
       updateBtn.disabled = false;
     }
-  }
+  };
 
-  // Function to show messages
-  function showMessage(message, type) {
+  const showMessage = (message, type) => {
     errorMessage.style.display = "none";
     successMessage.style.display = "none";
 
@@ -32,10 +30,9 @@ document.addEventListener("DOMContentLoaded", function () {
       successMessage.textContent = message;
       successMessage.style.display = "block";
     }
-  }
+  };
 
-  // Function to get current user data
-  async function getCurrentUser() {
+  const getCurrentUser = async () => {
     try {
       const response = await fetch("/api/user/me", {
         method: "GET",
@@ -51,13 +48,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error("Get user error:", error);
       throw error;
     }
-  }
+  };
 
-  // Function to update user profile
-  async function updateProfile(firstName, lastName, email) {
+  const updateProfile = async (firstName, lastName, email) => {
     try {
       const response = await fetch("/api/user/me", {
         method: "PUT",
@@ -78,13 +73,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error("Update profile error:", error);
       throw error;
     }
-  }
+  };
 
-  // Function to logout
-  async function logout() {
+  const logout = async () => {
     try {
       const response = await fetch("/api/user/logout", {
         method: "POST",
@@ -97,12 +90,11 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = "/";
       }
     } catch (error) {
-      console.error("Logout error:", error);
+      // Logout error - continue
     }
-  }
+  };
 
-  // Load user data on page load
-  async function loadUserData() {
+  const loadUserData = async () => {
     try {
       const data = await getCurrentUser();
       if (data.status === 200) {
@@ -112,20 +104,17 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("email").value = data.user.email;
       }
     } catch (error) {
-      console.error("Failed to load user data:", error);
       showMessage("Failed to load user data. Please try again.", "error");
     }
-  }
+  };
 
-  // Handle form submission
-  profileForm.addEventListener("submit", async function (e) {
+  profileForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const firstName = document.getElementById("firstName").value;
     const lastName = document.getElementById("lastName").value;
     const email = document.getElementById("email").value;
 
-    // Basic validation
     if (!firstName || !lastName || !email) {
       showMessage("Please fill in all fields", "error");
       return;
@@ -136,7 +125,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const data = await updateProfile(firstName, lastName, email);
-      console.log("Update response:", data);
 
       if (data.status === 200) {
         showMessage("Profile updated successfully!", "success");
@@ -144,7 +132,6 @@ document.addEventListener("DOMContentLoaded", function () {
         showMessage(data.message || "Update failed", "error");
       }
     } catch (error) {
-      console.error("Update error:", error);
       if (error.message.includes("HTTP error! status: 409")) {
         showMessage("Email already exists", "error");
       } else if (error.message.includes("HTTP error! status: 400")) {
@@ -157,12 +144,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Handle logout
-  logoutBtn.addEventListener("click", function () {
+  logoutBtn.addEventListener("click", () => {
     logout();
   });
 
-  // Add some interactive features
   const inputs = document.querySelectorAll("input:not([disabled])");
   inputs.forEach((input) => {
     input.addEventListener("focus", function () {
@@ -174,6 +159,5 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Load user data when page loads
   loadUserData();
 });

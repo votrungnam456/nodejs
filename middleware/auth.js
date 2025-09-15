@@ -4,7 +4,6 @@ const User = require("../model/user");
 const authMiddleware = async (req, res, next) => {
   try {
     const token = req.cookies.authToken;
-    console.log(token);
     if (!token) {
       return res.status(401).json({
         status: 401,
