@@ -38,13 +38,6 @@ router.get("/products/edit/:id", pageAuthMiddleware, (req, res) =>
   })
 );
 
-// Import route - render import page
-// router.get("/import", (req, res) => {
-//   res.render("import.ejs", {
-//     BASE_API_URL: process.env.BASE_API_URL,
-//   });
-// });
-
 // Test routes for different error types
 router.get("/error/404", (req, res, next) => {
   const error = new Error("Custom 404 Error");
