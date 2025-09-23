@@ -12,6 +12,7 @@ class ProductManager {
 
   init() {
     this.bindEvents();
+    this.loadCategories();
     this.loadProducts();
   }
 
@@ -66,6 +67,19 @@ class ProductManager {
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         this.closeModal();
+      }
+    });
+
+    const categoryFilter = document.getElementById("categoryFilter");
+    categoryFilter.addEventListener("change", async (e) => {
+      const value = e.target.value;
+      console.log("Bạn chọn:", value);
+
+      try {
+        this.currentFilters.category = value;
+        this.loadProducts();
+      } catch (err) {
+        console.error("Lỗi API:", err);
       }
     });
   }
@@ -427,6 +441,19 @@ class ProductManager {
       clearTimeout(timeout);
       timeout = setTimeout(later, wait);
     };
+  }
+
+  async loadCategories() {
+    const categoryFilter = document.getElementById("categoryFilter");
+    const response = await fetch(`/api/categories`);
+    const data = await response.json();
+    console.log(data);
+    data.data.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category.name;
+      option.textContent = category.name;
+      categoryFilter.appendChild(option);
+    });
   }
 }
 

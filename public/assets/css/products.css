@@ -163,6 +163,75 @@ body {
     border-color: #667eea;
 }
 
+/* Category Filter Select Styles */
+.category-filter {
+    margin-bottom: 1rem;
+}
+
+.category-filter-select {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px 16px;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+.category-filter-select:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.category-filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.category-filter-select option {
+    padding: 12px 16px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+    background: white;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.category-filter-select option:hover {
+    background: #f8f9fa;
+    color: #667eea;
+}
+
+.category-filter-select option:checked {
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+}
+
+.category-filter-select option:first-child {
+    color: #666;
+    font-style: italic;
+}
+
+.category-filter-select option:first-child:hover {
+    background: #f0f2ff;
+    color: #667eea;
+}
+
 .price-inputs {
     display: flex;
     align-items: center;

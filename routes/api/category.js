@@ -49,57 +49,49 @@ const upload = multer({
 router.get("/categories", async (req, res) => {
   try {
     const {
-      page = 1,
-      limit = 50,
+      // page = 1,
+      // limit = 50,
       search,
-      isActive,
-      sortBy = "sortOrder",
+      sortBy = "name",
       sortOrder = "asc",
     } = req.query;
 
     // Build filter object
     const filter = {};
 
-    if (isActive !== undefined) {
-      filter.isActive = isActive === "true";
-    }
-
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
         { slug: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
       ];
     }
 
-    // Build sort object
+    // Build   object
     const sort = {};
     sort[sortBy] = sortOrder === "desc" ? -1 : 1;
 
     // Calculate skip value for pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    // const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Get categories with pagination
-    const categories = await Category.find(filter)
-      .populate("parent", "name slug")
-      .sort(sort)
-      .limit(parseInt(limit))
-      .skip(skip);
+    const categories = await Category.find(filter).sort(sort);
+    // .limit(parseInt(limit));
+    // .skip(skip);
 
     // Get total count for pagination
-    const total = await Category.countDocuments(filter);
-    const totalPages = Math.ceil(total / parseInt(limit));
+    // const total = await Category.countDocuments(filter);
+    // const totalPages = Math.ceil(total / parseInt(limit));
 
     res.json({
       success: true,
       data: categories,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages,
-        totalCategories: total,
-        hasNextPage: parseInt(page) < totalPages,
-        hasPrevPage: parseInt(page) > 1,
-      },
+      // pagination: {
+      //   currentPage: parseInt(page),
+      //   totalPages,
+      //   totalCategories: total,
+      //   hasNextPage: parseInt(page) < totalPages,
+      //   hasPrevPage: parseInt(page) > 1,
+      // },
     });
   } catch (error) {
     console.error("Error fetching categories:", error);
@@ -114,10 +106,7 @@ router.get("/categories", async (req, res) => {
 // Get single category by ID
 router.get("/categories/:id", async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id).populate(
-      "parent",
-      "name slug"
-    );
+    const category = await Category.findById(req.params.id);
 
     if (!category) {
       return res.status(404).json({
@@ -143,10 +132,7 @@ router.get("/categories/:id", async (req, res) => {
 // Get category by slug
 router.get("/categories/slug/:slug", async (req, res) => {
   try {
-    const category = await Category.findBySlug(req.params.slug).populate(
-      "parent",
-      "name slug"
-    );
+    const category = await Category.findBySlug(req.params.slug);
 
     if (!category) {
       return res.status(404).json({
@@ -236,7 +222,6 @@ router.post("/categories/import", upload.single("file"), async (req, res) => {
             await Category.findByIdAndUpdate(existingCategory._id, {
               name: categoryData.name,
               slug: categoryData.slug,
-              originalId: categoryData._id || existingCategory.originalId,
               updatedAt: Date.now(),
             });
             console.log(`Updated existing category: ${categoryData.name}`);
@@ -245,8 +230,6 @@ router.post("/categories/import", upload.single("file"), async (req, res) => {
             const newCategory = new Category({
               name: categoryData.name,
               slug: categoryData.slug,
-              originalId: categoryData._id || "",
-              isActive: true,
             });
             await newCategory.save();
             console.log(`Created new category: ${categoryData.name}`);

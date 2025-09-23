@@ -62,16 +62,26 @@ router.get("/products", async (req, res) => {
 
     // Build filter object
     const filter = {};
+    const orConditions = [];
 
     if (category && category !== "all") {
-      filter.category = category;
+      orConditions.push(
+        { "categories.main": category },
+        { "categories.all": category }
+      );
     }
 
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
+      orConditions.push(
+        { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
-      ];
+        { description_long: { $regex: search, $options: "i" } }
+      );
+    }
+
+    // Combine all OR conditions
+    if (orConditions.length > 0) {
+      filter.$or = orConditions;
     }
 
     if (minPrice || maxPrice) {
@@ -338,24 +348,6 @@ router.delete("/products/:id", authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete product",
-      error: error.message,
-    });
-  }
-});
-
-// Get product categories
-router.get("/products/categories", async (req, res) => {
-  try {
-    const categories = await Product.distinct("category");
-    res.json({
-      success: true,
-      data: categories,
-    });
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch categories",
       error: error.message,
     });
   }
