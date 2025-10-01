@@ -128,6 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (data.status === 200) {
         showMessage("Profile updated successfully!", "success");
+        setTimeout(() => {
+          window.location.href = "/homepage";
+        }, 1500);
       } else {
         showMessage(data.message || "Update failed", "error");
       }
