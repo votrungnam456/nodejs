@@ -1,13 +1,16 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Product = require("../../model/product.js");
-const multer = require("multer");
-const fs = require("fs");
-const path = require("path");
-const { pipeline } = require("stream");
-const StreamArray = require("stream-json/streamers/StreamArray");
-const PQueue = require("p-queue").default;
-const authMiddleware = require("../../middleware/auth");
+import Product from "@/model/product.js";
+import ImportHistory from "@/model/importHistory.js";
+import fs from "fs";
+import path from "path";
+import PQueue from "p-queue";
+import authMiddleware from "@/middleware/auth.js";
+import { HTTP_STATUS } from "@/constants/http.js";
+import { MESSAGES } from "@/constants/messages.js";
+import { API } from "@/constants/api.js";
+import { uploadJson } from "@/utils/upload.js";
+import { importJsonFile } from "@/utils/jsonImport.js";
 
 // Add timeout middleware for this route
 const timeout = (ms) => (req, res, next) => {
@@ -25,29 +28,8 @@ const timeout = (ms) => (req, res, next) => {
   next();
 };
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-});
-
-const upload = multer({
-  storage: storage,
-  // Accept only JSON files
-  fileFilter: (req, file, cb) => {
-    if (
-      file.mimetype === "application/json" ||
-      file.originalname.endsWith(".json")
-    ) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only JSON files are allowed!"), false);
-    }
-  },
-});
-
 // Get all products with filtering and pagination
-router.get("/products", async (req, res) => {
+router.get(API.PRODUCTS.BASE, async (req, res) => {
   try {
     const {
       page = 1,
@@ -56,15 +38,18 @@ router.get("/products", async (req, res) => {
       search,
       minPrice,
       maxPrice,
+      active,
+      minStock,
+      maxStock,
       sortBy = "createdAt",
       sortOrder = "desc",
     } = req.query;
 
     // Build filter object
-    const filter = {};
+    const filter = { isDeleted: false };
 
     if (category && category !== "all") {
-      filter.category = category;
+      filter["categories.main"] = category;
     }
 
     if (search) {
@@ -80,6 +65,17 @@ router.get("/products", async (req, res) => {
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
 
+    // Add status filter
+    if (active !== undefined && active !== "") {
+      filter.active = active === "true";
+    }
+
+    // Add stock filter
+    if (minStock !== undefined || maxStock !== undefined) {
+      filter.stock = {};
+      if (minStock !== undefined) filter.stock.$gte = parseInt(minStock);
+      if (maxStock !== undefined) filter.stock.$lte = parseInt(maxStock);
+    }
     // Build sort object with field mapping
     const sort = {};
 
@@ -125,23 +121,23 @@ router.get("/products", async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to fetch products",
+      message: MESSAGES.PRODUCTS_FETCH_FAILED,
       error: error.message,
     });
   }
 });
 
 // Get single product by ID
-router.get("/products/:id", async (req, res) => {
+router.get(API.PRODUCTS.BY_ID(":id"), async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
 
     if (!product) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Product not found",
+        message: MESSAGES.PRODUCT_NOT_FOUND,
       });
     }
 
@@ -151,9 +147,9 @@ router.get("/products/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching product:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to fetch product",
+      message: MESSAGES.PRODUCT_FETCH_FAILED,
       error: error.message,
     });
   }
@@ -161,134 +157,36 @@ router.get("/products/:id", async (req, res) => {
 
 // Create new product
 router.post(
-  "/products",
+  API.PRODUCTS.BASE,
   authMiddleware,
   timeout(600000),
-  upload.single("file"),
+  uploadJson.single("file"),
   async (req, res) => {
     if (!req.file) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "No file uploaded",
+        message: MESSAGES.NO_FILE,
       });
     }
-    const batchSize = 50; // Tăng batch size để giảm số lượng operations
-    let batch = [];
-    let successCount = 0;
-    let failedCount = 0;
-    let streamEnded = false;
 
-    const queue = new PQueue({
-      concurrency: 3, // Tăng concurrency để xử lý nhiều batch cùng lúc
-      timeout: 30000, // Timeout 30 giây cho mỗi batch
-      retry: 2, // Retry 2 lần nếu fail
+    await ImportHistory.create({
+      type: "products",
+      filename: req.file.originalname,
+      size: req.file.size || 0,
+      filePath: req.file.path,
+      status: "pending",
+      createdAt: new Date(),
     });
 
-    const processBatch = async (batchData) => {
-      if (batchData.length === 0) return;
-      try {
-        console.log(`Processing batch with ${batchData.length} records`);
-        await Product.insertMany(batchData, {
-          ordered: false,
-          lean: true, // Sử dụng lean để tăng performance
-        });
-        successCount += batchData.length;
-        console.log(
-          `✅ Batch processed successfully: ${batchData.length} records`
-        );
-      } catch (err) {
-        console.error("❌ Batch insert error:", err.message);
-        failedCount += batchData.length;
-      }
-    };
-
-    const jsonStream = StreamArray.withParser();
-    const fileStream = fs.createReadStream(req.file.path);
-
-    pipeline(fileStream, jsonStream, (err) => {
-      if (err) {
-        console.error("❌ Pipeline failed:", err);
-        clearInterval(progressInterval);
-        clearInterval(checkFinish);
-        fs.unlinkSync(req.file.path);
-        return res.status(500).json({
-          success: false,
-          message: "Failed to process file",
-          error: err.message,
-        });
-      }
+    return res.json({
+      success: true,
+      message: MESSAGES.PRODUCT_IMPORT_STARTED,
     });
-
-    let totalProcessed = 0;
-    const startTime = Date.now();
-
-    jsonStream.on("data", ({ value }) => {
-      if (!value._source) {
-        failedCount++;
-        totalProcessed++;
-        return;
-      }
-
-      batch.push(value._source);
-
-      if (batch.length >= batchSize) {
-        const batchToInsert = [...batch]; // Clone array để tránh race condition
-        batch = [];
-        queue.add(() => processBatch(batchToInsert));
-      }
-    });
-
-    jsonStream.on("end", () => {
-      console.log("📁 File reading completed, processing remaining batches...");
-      // xử lý batch cuối
-      if (batch.length > 0) {
-        const lastBatch = [...batch];
-        batch = [];
-        queue.add(() => processBatch(lastBatch));
-      }
-      streamEnded = true;
-    });
-
-    // Monitoring progress
-    const progressInterval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      console.log(
-        `📊 Progress: ${successCount + failedCount} processed, ${
-          queue.pending
-        } pending, ${elapsed}ms elapsed`
-      );
-    }, 5000);
-
-    // Khi queue trống và stream đã hết → trả response
-    const checkFinish = setInterval(() => {
-      if (streamEnded && queue.size === 0 && queue.pending === 0) {
-        clearInterval(checkFinish);
-        clearInterval(progressInterval);
-
-        const totalTime = Date.now() - startTime;
-        fs.unlinkSync(req.file.path);
-
-        console.log(
-          `✅ Import completed in ${totalTime}ms: ${successCount} success, ${failedCount} failed`
-        );
-
-        res.json({
-          success: true,
-          message: "Import completed",
-          data: {
-            successCount,
-            failedCount,
-            totalTime: `${totalTime}ms`,
-            averageTimePerRecord: totalTime / (successCount + failedCount),
-          },
-        });
-      }
-    }, 500); // Giảm interval để response nhanh hơn
   }
 );
 
 // Update product
-router.put("/products/:id", authMiddleware, async (req, res) => {
+router.put(API.PRODUCTS.BY_ID(":id"), authMiddleware, async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -296,55 +194,59 @@ router.put("/products/:id", authMiddleware, async (req, res) => {
     });
 
     if (!product) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Product not found",
+        message: MESSAGES.PRODUCT_NOT_FOUND,
       });
     }
 
     res.json({
       success: true,
-      message: "Product updated successfully",
+      message: MESSAGES.PRODUCT_UPDATED,
       data: product,
     });
   } catch (error) {
     console.error("Error updating product:", error);
-    res.status(400).json({
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
-      message: "Failed to update product",
+      message: MESSAGES.PRODUCT_UPDATE_FAILED,
       error: error.message,
     });
   }
 });
 
 // Delete product
-router.delete("/products/:id", authMiddleware, async (req, res) => {
+router.delete(API.PRODUCTS.BY_ID(":id"), authMiddleware, async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: true },
+      { new: true, runValidators: true }
+    );
 
     if (!product) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Product not found",
+        message: MESSAGES.PRODUCT_NOT_FOUND,
       });
     }
 
     res.json({
       success: true,
-      message: "Product deleted successfully",
+      message: MESSAGES.PRODUCT_DELETED,
     });
   } catch (error) {
     console.error("Error deleting product:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to delete product",
+      message: MESSAGES.PRODUCT_DELETE_FAILED,
       error: error.message,
     });
   }
 });
 
 // Get product categories
-router.get("/products/categories", async (req, res) => {
+router.get(API.PRODUCTS.CATEGORIES, async (req, res) => {
   try {
     const categories = await Product.distinct("category");
     res.json({
@@ -353,12 +255,66 @@ router.get("/products/categories", async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching categories:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to fetch categories",
+      message: MESSAGES.CATEGORIES_FETCH_FAILED,
       error: error.message,
     });
   }
 });
 
-module.exports = router;
+// Create single product (JSON body)
+router.post(API.PRODUCTS.NEW, authMiddleware, async (req, res) => {
+  try {
+    const {
+      title,
+      description = "",
+      image = "",
+      stock = 0,
+      active = true,
+      categories = {},
+      sku,
+      ean,
+      isDeleted = false,
+    } = req.body || {};
+
+    if (!title || typeof title !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Title is required",
+      });
+    }
+
+    const product = new Product({
+      title,
+      description,
+      image,
+      stock: Number.isFinite(stock) ? stock : 0,
+      active: Boolean(active),
+      categories: {
+        main: categories?.main || "",
+        all: categories?.all || (categories?.main ? [categories.main] : []),
+      },
+      sku,
+      ean,
+      isDeleted,
+    });
+
+    await product.save();
+
+    res.status(HTTP_STATUS.CREATED).json({
+      success: true,
+      message: MESSAGES.PRODUCT_CREATED,
+      data: product,
+    });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: MESSAGES.PRODUCT_UPDATE_FAILED,
+      error: error.message,
+    });
+  }
+});
+
+export default router;

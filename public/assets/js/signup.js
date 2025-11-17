@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const signupUser = async (userData) => {
     try {
-      const response = await fetch("/api/user/signup", {
+      const response = await fetch(API.AUTH.SIGNUP, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

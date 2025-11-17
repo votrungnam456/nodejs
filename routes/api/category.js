@@ -1,12 +1,17 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Category = require("../../model/category.js");
-const multer = require("multer");
-const fs = require("fs");
-const path = require("path");
-const { pipeline } = require("stream");
-const StreamArray = require("stream-json/streamers/StreamArray");
-const PQueue = require("p-queue").default;
+import Category from "@/model/category.js";
+import fs from "fs";
+import path from "path";
+import { pipeline } from "stream";
+import StreamArray from "stream-json/streamers/StreamArray.js";
+import PQueue from "p-queue";
+import { uploadJson } from "@/utils/upload.js";
+import { importJsonFile } from "@/utils/jsonImport.js";
+import { HTTP_STATUS } from "@/constants/http.js";
+import { MESSAGES } from "@/constants/messages.js";
+import { API } from "@/constants/api.js";
+import ImportHistory from "@/model/importHistory.js";
 
 // Add timeout middleware for this route
 const timeout = (ms) => (req, res, next) => {
@@ -24,51 +29,26 @@ const timeout = (ms) => (req, res, next) => {
   next();
 };
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"), // Make sure this directory exists
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-});
-
-const upload = multer({
-  storage: storage,
-  // Accept only JSON files
-  fileFilter: (req, file, cb) => {
-    if (
-      file.mimetype === "application/json" ||
-      file.originalname.endsWith(".json")
-    ) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only JSON files are allowed!"), false);
-    }
-  },
-});
+// Multer moved to utils/upload.js
 
 // Get all categories with filtering and pagination
-router.get("/categories", async (req, res) => {
+router.get(API.CATEGORIES.BASE, async (req, res) => {
   try {
     const {
       page = 1,
       limit = 50,
       search,
-      isActive,
-      sortBy = "sortOrder",
+      sortBy = "name",
       sortOrder = "asc",
     } = req.query;
 
     // Build filter object
     const filter = {};
 
-    if (isActive !== undefined) {
-      filter.isActive = isActive === "true";
-    }
-
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
         { slug: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -81,7 +61,6 @@ router.get("/categories", async (req, res) => {
 
     // Get categories with pagination
     const categories = await Category.find(filter)
-      .populate("parent", "name slug")
       .sort(sort)
       .limit(parseInt(limit))
       .skip(skip);
@@ -103,26 +82,41 @@ router.get("/categories", async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching categories:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to fetch categories",
+      message: MESSAGES.CATEGORIES_FETCH_FAILED,
       error: error.message,
     });
   }
 });
 
 // Get single category by ID
-router.get("/categories/:id", async (req, res) => {
+// Get all active categories (for dropdowns, etc.) - keep BEFORE :id route to avoid clash
+// router.get("/categories/active", async (req, res) => {
+//   try {
+//     const categories = await Category.getActiveCategories();
+//     res.json({
+//       success: true,
+//       data: categories,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching active categories:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to fetch active categories",
+//       error: error.message,
+//     });
+//   }
+// });
+
+router.get(API.CATEGORIES.BY_ID(":id"), async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id).populate(
-      "parent",
-      "name slug"
-    );
+    const category = await Category.findById(req.params.id);
 
     if (!category) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Category not found",
+        message: MESSAGES.CATEGORY_NOT_FOUND,
       });
     }
 
@@ -132,26 +126,24 @@ router.get("/categories/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching category:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to fetch category",
+      message: MESSAGES.CATEGORY_FETCH_FAILED,
       error: error.message,
     });
   }
 });
 
 // Get category by slug
-router.get("/categories/slug/:slug", async (req, res) => {
+// Slug route should also be before generic :id if patterns could overlap
+router.get(API.CATEGORIES.BY_SLUG(":slug"), async (req, res) => {
   try {
-    const category = await Category.findBySlug(req.params.slug).populate(
-      "parent",
-      "name slug"
-    );
+    const category = await Category.findBySlug(req.params.slug);
 
     if (!category) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Category not found",
+        message: MESSAGES.CATEGORY_NOT_FOUND,
       });
     }
 
@@ -161,258 +153,65 @@ router.get("/categories/slug/:slug", async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching category by slug:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to fetch category",
+      message: MESSAGES.CATEGORY_FETCH_FAILED,
       error: error.message,
     });
   }
 });
 
 // Create new category
-router.post("/categories", async (req, res) => {
+router.post(API.CATEGORIES.BASE, async (req, res) => {
   try {
     const category = new Category(req.body);
     await category.save();
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       success: true,
-      message: "Category created successfully",
+      message: MESSAGES.CATEGORY_CREATED,
       data: category,
     });
   } catch (error) {
     console.error("Error creating category:", error);
-    res.status(400).json({
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
-      message: "Failed to create category",
+      message: MESSAGES.CATEGORY_FETCH_FAILED,
       error: error.message,
     });
   }
 });
 
 // Import categories from JSON file
-router.post("/categories/import", upload.single("file"), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({
-      success: false,
-      message: "No file uploaded",
-    });
-  }
-
-  console.log("Category import file:", req.file);
-  const batchSize = 50;
-  let batch = [];
-  let successCount = 0;
-  let failedCount = 0;
-  let streamEnded = false;
-  let totalProcessed = 0;
-  const startTime = Date.now();
-
-  // Declare intervals early to avoid reference errors
-  let progressInterval;
-  let checkFinish;
-
-  const queue = new PQueue({
-    concurrency: 3,
-    timeout: 30000,
-    retry: 2,
-  });
-
-  const processBatch = async (batchData) => {
-    if (batchData.length === 0) return;
-    try {
-      console.log(`Processing category batch with ${batchData.length} records`);
-
-      // Process each category in the batch
-      for (const categoryData of batchData) {
-        try {
-          // Check if category already exists by slug
-          const existingCategory = await Category.findOne({
-            slug: categoryData.slug,
-          });
-
-          if (existingCategory) {
-            // Update existing category
-            await Category.findByIdAndUpdate(existingCategory._id, {
-              name: categoryData.name,
-              slug: categoryData.slug,
-              originalId: categoryData._id || existingCategory.originalId,
-              updatedAt: Date.now(),
-            });
-            console.log(`Updated existing category: ${categoryData.name}`);
-          } else {
-            // Create new category
-            const newCategory = new Category({
-              name: categoryData.name,
-              slug: categoryData.slug,
-              originalId: categoryData._id || "",
-              isActive: true,
-            });
-            await newCategory.save();
-            console.log(`Created new category: ${categoryData.name}`);
-          }
-          successCount++;
-        } catch (err) {
-          console.error(
-            `Error processing category ${categoryData.name}:`,
-            err.message
-          );
-          failedCount++;
-        }
-      }
-
-      console.log(
-        `✅ Category batch processed successfully: ${batchData.length} records`
-      );
-    } catch (err) {
-      console.error("❌ Category batch insert error:", err.message);
-      failedCount += batchData.length;
-    }
-  };
-
-  // Function to send final response
-  const sendFinalResponse = () => {
-    console.log("Category import completed, sending response...");
-
-    // Clear all intervals
-    if (progressInterval) clearInterval(progressInterval);
-    if (checkFinish) clearInterval(checkFinish);
-
-    // Clean up file
-    try {
-      fs.unlinkSync(req.file.path);
-    } catch (err) {
-      console.error("Error deleting file:", err.message);
-    }
-
-    const totalTime = Date.now() - startTime;
-    console.log(
-      `✅ Category import completed in ${totalTime}ms: ${successCount} success, ${failedCount} failed`
-    );
-
-    res.json({
-      success: true,
-      message: "Category import completed",
-      data: {
-        successCount,
-        failedCount,
-        totalTime: `${totalTime}ms`,
-        averageTimePerRecord: totalTime / (successCount + failedCount),
-      },
-    });
-  };
-
-  const jsonStream = StreamArray.withParser();
-  const fileStream = fs.createReadStream(req.file.path);
-
-  // Handle pipeline errors
-  pipeline(fileStream, jsonStream, (err) => {
-    if (err) {
-      console.error("❌ Pipeline failed:", err);
-      if (progressInterval) clearInterval(progressInterval);
-      if (checkFinish) clearInterval(checkFinish);
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (unlinkErr) {
-        console.error("Error deleting file:", unlinkErr.message);
-      }
-      return res.status(500).json({
+router.post(
+  API.CATEGORIES.IMPORT,
+  uploadJson.single("file"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Failed to process file",
-        error: err.message,
+        message: MESSAGES.NO_FILE,
       });
     }
-  });
 
-  jsonStream.on("data", ({ value }) => {
-    // Skip the first element if it's metadata (count, date)
-    if (value.count !== undefined || value.date !== undefined) {
-      return;
-    }
-
-    if (!value._source) {
-      failedCount++;
-      totalProcessed++;
-      return;
-    }
-
-    batch.push(value._source);
-
-    if (batch.length >= batchSize) {
-      const batchToInsert = [...batch];
-      batch = [];
-      queue.add(() => processBatch(batchToInsert));
-    }
-  });
-
-  jsonStream.on("end", () => {
-    console.log(
-      "📁 Category file reading completed, processing remaining batches..."
-    );
-    if (batch.length > 0) {
-      const lastBatch = [...batch];
-      batch = [];
-      queue.add(() => processBatch(lastBatch));
-    }
-    streamEnded = true;
-  });
-
-  // Monitoring progress
-  progressInterval = setInterval(() => {
-    const elapsed = Date.now() - startTime;
-    console.log(
-      `📊 Category Progress: ${successCount + failedCount} processed, ${
-        queue.pending
-      } pending, ${elapsed}ms elapsed`
-    );
-  }, 5000);
-
-  // Check when queue is empty and stream has ended
-  checkFinish = setInterval(() => {
-    console.log(
-      "check finish - streamEnded:",
-      streamEnded,
-      "queue.pending:",
-      queue.pending,
-      "queue.size:",
-      queue.size
-    );
-
-    if (streamEnded && queue.pending === 0 && queue.size === 0) {
-      sendFinalResponse();
-    }
-  }, 1000); // Check every second instead of 500ms
-
-  // Add timeout protection
-  const timeoutId = setTimeout(() => {
-    console.log("Import timeout reached, forcing completion...");
-    if (progressInterval) clearInterval(progressInterval);
-    if (checkFinish) clearInterval(checkFinish);
-    try {
-      fs.unlinkSync(req.file.path);
-    } catch (err) {
-      console.error("Error deleting file:", err.message);
-    }
-
-    res.status(408).json({
-      success: false,
-      message: "Import timeout - operation took too long",
-      data: {
-        successCount,
-        failedCount,
-        totalTime: `${Date.now() - startTime}ms`,
-      },
+    await ImportHistory.create({
+      type: "categories",
+      filename: req.file.originalname,
+      size: req.file.size || 0,
+      filePath: req.file.path,
+      status: "pending",
+      createdAt: new Date(),
     });
-  }, 600000); // 10 minutes timeout
 
-  // Clear timeout when response is sent
-  res.on("finish", () => {
-    clearTimeout(timeoutId);
-  });
-});
+    return res.json({
+      success: true,
+      message: MESSAGES.CATEGORY_IMPORT_STARTED,
+    });
+  }
+);
 
 // Update category
-router.put("/categories/:id", async (req, res) => {
+router.put(API.CATEGORIES.BY_ID(":id"), async (req, res) => {
   try {
     const category = await Category.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -420,69 +219,50 @@ router.put("/categories/:id", async (req, res) => {
     });
 
     if (!category) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Category not found",
+        message: MESSAGES.CATEGORY_NOT_FOUND,
       });
     }
 
     res.json({
       success: true,
-      message: "Category updated successfully",
+      message: MESSAGES.CATEGORY_UPDATED,
       data: category,
     });
   } catch (error) {
     console.error("Error updating category:", error);
-    res.status(400).json({
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
-      message: "Failed to update category",
+      message: MESSAGES.CATEGORY_FETCH_FAILED,
       error: error.message,
     });
   }
 });
 
 // Delete category
-router.delete("/categories/:id", async (req, res) => {
+router.delete(API.CATEGORIES.BY_ID(":id"), async (req, res) => {
   try {
     const category = await Category.findByIdAndDelete(req.params.id);
 
     if (!category) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: "Category not found",
+        message: MESSAGES.CATEGORY_NOT_FOUND,
       });
     }
 
     res.json({
       success: true,
-      message: "Category deleted successfully",
+      message: MESSAGES.CATEGORY_DELETED,
     });
   } catch (error) {
     console.error("Error deleting category:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to delete category",
+      message: MESSAGES.CATEGORY_FETCH_FAILED,
       error: error.message,
     });
   }
 });
-
-// Get all active categories (for dropdowns, etc.)
-router.get("/categories/active", async (req, res) => {
-  try {
-    const categories = await Category.getActiveCategories();
-    res.json({
-      success: true,
-      data: categories,
-    });
-  } catch (error) {
-    console.error("Error fetching active categories:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch active categories",
-      error: error.message,
-    });
-  }
-});
-
-module.exports = router;
+export default router;

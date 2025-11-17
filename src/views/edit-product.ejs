@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
@@ -10,6 +11,7 @@
     <link rel="stylesheet" href="/assets/css/edit-product.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <header class="header">
         <div class="container">
@@ -82,7 +84,7 @@
                                     <i class="fas fa-info-circle"></i>
                                     Basic Information
                                 </h3>
-                                
+
                                 <div class="form-group">
                                     <label for="title" class="form-label">
                                         Product Title <span class="required">*</span>
@@ -104,14 +106,17 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="category" class="form-label">Main Category</label>
-                                    <input type="text" id="category" name="category" class="form-input" placeholder="Enter category name">
+                                    <label for="categorySelect" class="form-label">Main Category</label>
+                                    <select id="categorySelect" name="category" class="form-select">
+                                        <option value="">-- Select category --</option>
+                                    </select>
                                     <div class="form-error" id="categoryError"></div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="url" class="form-label">Product URL</label>
-                                    <input type="url" id="url" name="url" class="form-input" placeholder="https://example.com/product">
+                                    <input type="url" id="url" name="url" class="form-input"
+                                        placeholder="https://example.com/product">
                                     <div class="form-error" id="urlError"></div>
                                 </div>
                             </div>
@@ -122,7 +127,7 @@
                                     <i class="fas fa-boxes"></i>
                                     Stock Information
                                 </h3>
-                                
+
                                 <div class="form-group">
                                     <label for="stock" class="form-label">Stock Quantity</label>
                                     <input type="number" id="stock" name="stock" class="form-input" min="0" value="999">
@@ -157,7 +162,7 @@
                                     <i class="fas fa-toggle-on"></i>
                                     Product Status
                                 </h3>
-                                
+
                                 <div class="form-group">
                                     <label class="form-label">Product Status</label>
                                     <div class="toggle-group">
@@ -188,10 +193,11 @@
                                     <i class="fas fa-image"></i>
                                     Product Image
                                 </h3>
-                                
+
                                 <div class="form-group">
                                     <label for="image" class="form-label">Image URL</label>
-                                    <input type="url" id="image" name="image" class="form-input" placeholder="https://example.com/image.jpg">
+                                    <input type="url" id="image" name="image" class="form-input"
+                                        placeholder="https://example.com/image.jpg">
                                     <div class="form-error" id="imageError"></div>
                                 </div>
 
@@ -209,16 +215,18 @@
                                     <i class="fas fa-align-left"></i>
                                     Descriptions
                                 </h3>
-                                
+
                                 <div class="form-group">
                                     <label for="description" class="form-label">Short Description</label>
-                                    <textarea id="description" name="description" class="form-textarea" rows="3" placeholder="Brief product description"></textarea>
+                                    <textarea id="description" name="description" class="form-textarea" rows="3"
+                                        placeholder="Brief product description"></textarea>
                                     <div class="form-error" id="descriptionError"></div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="description_long" class="form-label">Long Description</label>
-                                    <textarea id="description_long" name="description_long" class="form-textarea" rows="5" placeholder="Detailed product description"></textarea>
+                                    <textarea id="description_long" name="description_long" class="form-textarea"
+                                        rows="5" placeholder="Detailed product description"></textarea>
                                     <div class="form-error" id="description_longError"></div>
                                 </div>
                             </div>
@@ -293,6 +301,8 @@
         window.BASE_API_URL = '<%= BASE_API_URL %>';
         window.PRODUCT_ID = '<%= productId %>';
     </script>
+    <script src="/assets/js/api.js"></script>
     <script src="/assets/js/edit-product.js"></script>
 </body>
+
 </html>

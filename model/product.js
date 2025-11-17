@@ -1,4 +1,4 @@
-const { Schema, model } = require("mongoose");
+import { Schema, model } from "mongoose";
 
 const productSchema = new Schema({
   title: {
@@ -119,6 +119,10 @@ const productSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Update the updatedAt field before saving
@@ -127,4 +131,4 @@ productSchema.pre("save", function (next) {
   next();
 });
 
-module.exports = model("Product", productSchema);
+export default model("Product", productSchema);

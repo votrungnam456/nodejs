@@ -1,4 +1,4 @@
-const { Schema, model } = require("mongoose");
+import { Schema, model } from "mongoose";
 
 const categorySchema = new Schema({
   name: {
@@ -12,28 +12,6 @@ const categorySchema = new Schema({
     trim: true,
     unique: true,
   },
-  description: {
-    type: String,
-    default: "",
-  },
-  parent: {
-    type: Schema.Types.ObjectId,
-    ref: "Category",
-    default: null,
-  },
-  isActive: {
-    type: Boolean,
-    default: true,
-  },
-  sortOrder: {
-    type: Number,
-    default: 0,
-  },
-  // Store the original _id from the JSON import for reference
-  originalId: {
-    type: String,
-    default: "",
-  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -41,6 +19,10 @@ const categorySchema = new Schema({
   updatedAt: {
     type: Date,
     default: Date.now,
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -57,12 +39,12 @@ categorySchema.pre("save", function (next) {
 
 // Static method to find categories by slug
 categorySchema.statics.findBySlug = function (slug) {
-  return this.findOne({ slug: slug, isActive: true });
+  return this.findOne({ slug: slug, isDeleted: false });
 };
 
 // Static method to get all active categories
-categorySchema.statics.getActiveCategories = function () {
-  return this.find({ isActive: true }).sort({ sortOrder: 1, name: 1 });
+categorySchema.statics.getCategories = function () {
+  return this.find({ isDeleted: false }).sort({ name: 1 });
 };
 
-module.exports = model("Category", categorySchema);
+export default model("Category", categorySchema);

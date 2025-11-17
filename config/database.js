@@ -1,10 +1,13 @@
-// db.js
-const mongoose = require("mongoose");
+// Database configuration
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 
-const url = "mongodb://localhost:27017/";
+dotenv.config();
 
-const dbName = "nodejs";
-const connectDB = async () => {
+const url = process.env.MONGODB_URL || "mongodb://localhost:27017/";
+const dbName = process.env.MONGODB_DB_NAME || "nodejs";
+
+export const connectDB = async () => {
   try {
     await mongoose.connect(url + dbName, {
       // useNewUrlParser: true,
@@ -16,5 +19,3 @@ const connectDB = async () => {
     throw err;
   }
 };
-
-module.exports = { connectDB };

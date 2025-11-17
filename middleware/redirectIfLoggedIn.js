@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const User = require("../model/user");
+import jwt from "jsonwebtoken";
+import User from "@/model/user.js";
 
 const redirectIfLoggedIn = async (req, res, next) => {
   try {
@@ -34,4 +34,4 @@ const redirectIfLoggedIn = async (req, res, next) => {
   }
 };
 
-module.exports = redirectIfLoggedIn;
+export default redirectIfLoggedIn;

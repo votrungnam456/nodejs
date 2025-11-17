@@ -1,8 +1,8 @@
-const express = require("express");
-const path = require("path");
+import express from "express";
+import path from "path";
 const router = express.Router();
-const pageAuthMiddleware = require("../middleware/pageAuth");
-const redirectIfLoggedIn = require("../middleware/redirectIfLoggedIn");
+import pageAuthMiddleware from "@/middleware/pageAuth.js";
+import redirectIfLoggedIn from "@/middleware/redirectIfLoggedIn.js";
 
 // Home page route
 router.get("/", redirectIfLoggedIn, (req, res) => res.render("login.ejs"));
@@ -12,6 +12,21 @@ router.get("/homepage", (req, res) => res.render("homepage.ejs"));
 
 // Signup route
 router.get("/signup", (req, res) => res.render("signup.ejs"));
+
+// Forgot password page
+router.get("/forgot-password", (req, res) => res.render("forgot-password.ejs"));
+
+// Reset password page with token
+router.get("/reset-password", (req, res) =>
+  res.render("reset-password.ejs", { token: req.query.token || "" })
+);
+
+// Change password page (protected)
+router.get("/change-password", pageAuthMiddleware, (req, res) =>
+  res.render("change-password.ejs", {
+    user: req.user,
+  })
+);
 
 // Profile route
 router.get("/profile", pageAuthMiddleware, (req, res) =>
@@ -64,7 +79,7 @@ router.get("/error/throw", (req, res) => {
 router.get("/error/api", async (req, res, next) => {
   try {
     // Simulate API error
-    const axios = require("axios");
+    const axios = (await import("axios")).default;
     const response = await axios.get("https://invalid-url-that-will-fail.com");
     res.json(response.data);
   } catch (error) {
@@ -99,4 +114,4 @@ router.use((err, req, res, next) =>
   })
 );
 
-module.exports = router;
+export default router;

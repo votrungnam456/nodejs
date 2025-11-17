@@ -1,18 +1,25 @@
-const express = require("express");
-const connectDB = require("./connectDB.js");
-const cookieParser = require("cookie-parser");
+import express from "express";
+import { connectDB } from "@/config/database.js";
+import cookieParser from "cookie-parser";
 const app = express();
 const port = process.env.PORT || 3000;
 const hostname = process.env.HOST_NAME || "localhost";
-const path = require("path");
+import path from "path";
+import { fileURLToPath } from "url";
+import { API } from "@/constants/api.js";
 
 // Import route files
-const viewRoutes = require("./routes/views");
-const apiUserRoutes = require("./routes/api/user.js");
-const apiProductRoutes = require("./routes/api/product.js");
-const apiCategoryRoutes = require("./routes/api/category.js");
+import viewRoutes from "@/routes/views.js";
+import apiUserRoutes from "@/routes/api/user.js";
+import apiProductRoutes from "@/routes/api/product.js";
+import apiCategoryRoutes from "@/routes/api/category.js";
+import apiAuthRoutes from "@/routes/api/auth.js";
+import apiImportHistoryRoutes from "@/routes/api/importHistory.js";
 
-require("dotenv").config();
+import "@/cron/importCron.js";
+
+import dotenv from "dotenv";
+dotenv.config();
 
 app.set("views", "./src/views/");
 app.set("view engine", "ejs");
@@ -38,11 +45,44 @@ app.use((req, res, next) => {
   next();
 });
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, "public")));
 
+// Serve client API constants from server constants
+app.get("/assets/js/api.js", (req, res) => {
+  const prefix = "/api";
+  const withPrefix = (api) => ({
+    AUTH: {
+      LOGIN: `${prefix}${api.AUTH.LOGIN}`,
+      LOGOUT: `${prefix}${api.AUTH.LOGOUT}`,
+      SIGNUP: `${prefix}${api.AUTH.SIGNUP}`,
+      FORGOT_PASSWORD: `${prefix}${api.AUTH.FORGOT_PASSWORD}`,
+      RESET_PASSWORD: `${prefix}${api.AUTH.RESET_PASSWORD}`,
+      CHANGE_PASSWORD: `${prefix}${api.AUTH.CHANGE_PASSWORD}`,
+    },
+    USER: {
+      ME: `${prefix}${api.USER.ME}`,
+    },
+    PRODUCTS: {
+      BASE: `${prefix}${api.PRODUCTS.BASE}`,
+      NEW: `${prefix}${api.PRODUCTS.NEW}`,
+      CATEGORIES: `${prefix}${api.PRODUCTS.CATEGORIES}`,
+    },
+    CATEGORIES: {
+      BASE: `${prefix}${api.CATEGORIES.BASE}`,
+      BY_SLUG_PREFIX: `${prefix}/categories/slug/`,
+      ACTIVE: `${prefix}${api.CATEGORIES.ACTIVE}`,
+      IMPORT: `${prefix}${api.CATEGORIES.IMPORT}`,
+    },
+  });
+  const clientApi = withPrefix(API);
+  const js = `window.API = ${JSON.stringify(clientApi)};`;
+  res.type("application/javascript").send(js);
+});
+
 // Database connection
-connectDB
-  .connectDB()
+connectDB()
   .then(async (db) => {
     console.log("Database connected");
   })
@@ -51,9 +91,11 @@ connectDB
   });
 
 // Use route files
+app.use("/api", apiAuthRoutes);
 app.use("/api", apiUserRoutes);
 app.use("/api", apiProductRoutes);
 app.use("/api", apiCategoryRoutes);
+app.use("/api", apiImportHistoryRoutes);
 app.use("/", viewRoutes);
 
 app.listen(port, hostname, () => {

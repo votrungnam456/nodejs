@@ -1,15 +1,22 @@
 class EditProductManager {
   constructor() {
     this.productId = window.PRODUCT_ID;
+    this.isCreate = !this.productId || this.productId === "new";
     this.originalData = null;
     this.isLoading = false;
 
     this.init();
   }
 
-  init() {
+  async init() {
     this.bindEvents();
-    this.loadProduct();
+    await this.loadCategories();
+    if (this.isCreate) {
+      this.showLoading(false);
+      this.prepareCreateUI();
+    } else {
+      await this.loadProduct();
+    }
   }
 
   bindEvents() {
@@ -76,7 +83,7 @@ class EditProductManager {
     this.hideError();
 
     try {
-      const response = await fetch(`/api/products/${this.productId}`);
+      const response = await fetch(`${API.PRODUCTS.BASE}/${this.productId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -100,7 +107,7 @@ class EditProductManager {
     this.setFieldValue("title", product.title || "");
     this.setFieldValue("sku", product.sku || "");
     this.setFieldValue("ean", product.ean || "");
-    this.setFieldValue("category", product.categories?.main || "");
+    this.setFieldValue("categorySelect", product.categories?.main || "");
     this.setFieldValue("url", product.url || "");
 
     // Stock information
@@ -260,8 +267,12 @@ class EditProductManager {
 
     try {
       const formData = this.getFormData();
-      const response = await fetch(`/api/products/${this.productId}`, {
-        method: "PUT",
+      const endpoint = this.isCreate
+        ? API.PRODUCTS.NEW
+        : `${API.PRODUCTS.BASE}/${this.productId}`;
+      const method = this.isCreate ? "POST" : "PUT";
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -303,14 +314,36 @@ class EditProductManager {
         document.querySelector('input[name="active"]:checked')?.value ===
         "true",
       categories: {
-        main: document.getElementById("category").value.trim(),
-        all: document.getElementById("category").value.trim()
-          ? [document.getElementById("category").value.trim()]
+        main: document.getElementById("categorySelect").value.trim(),
+        all: document.getElementById("categorySelect").value.trim()
+          ? [document.getElementById("categorySelect").value.trim()]
           : [],
       },
     };
 
     return formData;
+  }
+
+  async loadCategories() {
+    try {
+      const select = document.getElementById("categorySelect");
+      if (!select) return;
+      const res = await fetch(`${API.CATEGORIES.BASE}?limit=1000`);
+      const data = await res.json();
+      const categories = Array.isArray(data.data) ? data.data : [];
+      // Clear keep placeholder
+      select.innerHTML = '<option value="">Tất cả danh mục</option>';
+      categories.forEach((c) => {
+        const name = c.name || c.slug || "";
+        if (!name) return;
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+    } catch (_) {
+      // ignore
+    }
   }
 
   setSaveButtonLoading(loading) {
@@ -387,8 +420,27 @@ class EditProductManager {
   showSuccessModal() {
     const modal = document.getElementById("successModal");
     if (modal) {
+      const body = modal.querySelector(".modal-body p");
+      if (body && this.isCreate) {
+        body.textContent = "Product created successfully!";
+      }
       modal.classList.remove("hidden");
     }
+  }
+
+  prepareCreateUI() {
+    // Adjust UI for create mode
+    const titleEl = document.querySelector(".page-title");
+    if (titleEl) {
+      titleEl.innerHTML = '<i class="fas fa-plus-circle"></i> Create Product';
+    }
+    const productIdEl = document.getElementById("productId");
+    if (productIdEl) productIdEl.textContent = "New";
+    const saveBtn = document.getElementById("saveBtn");
+    if (saveBtn)
+      saveBtn.innerHTML = '<i class="fas fa-save"></i> Create Product';
+    // Show form immediately
+    this.showForm();
   }
 
   showErrorModal(message) {
