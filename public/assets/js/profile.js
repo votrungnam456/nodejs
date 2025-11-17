@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const getCurrentUser = async () => {
     try {
-      const response = await fetch("/api/user/me", {
+      const response = await fetch(API.USER.ME, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const updateProfile = async (firstName, lastName, email) => {
     try {
-      const response = await fetch("/api/user/me", {
+      const response = await fetch(API.USER.ME, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const logout = async () => {
     try {
-      const response = await fetch("/api/user/logout", {
+      const response = await fetch(API.AUTH.LOGOUT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

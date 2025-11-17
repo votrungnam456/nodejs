@@ -1,7 +1,7 @@
 class ProductManager {
   constructor() {
     this.currentPage = 1;
-    this.productsPerPage = 20;
+    this.productsPerPage = 10;
     this.currentFilters = {
       sortBy: "createdAt",
       sortOrder: "desc",
@@ -19,6 +19,8 @@ class ProductManager {
     // Pagination
     const prevPageBtn = document.getElementById("prevPage");
     const nextPageBtn = document.getElementById("nextPage");
+    const pageInput = document.getElementById("pageInput");
+    const limitSelect = document.getElementById("limitSelect");
 
     if (prevPageBtn) {
       prevPageBtn.addEventListener("click", () => {
@@ -36,6 +38,34 @@ class ProductManager {
       });
     }
 
+    if (pageInput) {
+      pageInput.addEventListener("change", () => {
+        const desired = parseInt(pageInput.value, 10) || 1;
+        this.currentPage = Math.max(1, desired);
+        this.loadProducts();
+      });
+      pageInput.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") {
+          const desired = parseInt(pageInput.value, 10) || 1;
+          this.currentPage = Math.max(1, desired);
+          this.loadProducts();
+        }
+      });
+    }
+
+    if (limitSelect) {
+      // Initialize from current productsPerPage
+      if (["5", "10", "25", "50"].includes(String(this.productsPerPage))) {
+        limitSelect.value = String(this.productsPerPage);
+      }
+      limitSelect.addEventListener("change", () => {
+        const newLimit = parseInt(limitSelect.value, 10) || 10;
+        this.productsPerPage = newLimit;
+        this.currentPage = 1; // reset to first page on limit change
+        this.loadProducts();
+      });
+    }
+
     // Sorting
     const sortableHeaders = document.querySelectorAll(".sortable");
     sortableHeaders.forEach((header) => {
@@ -44,13 +74,70 @@ class ProductManager {
       });
     });
 
+    // Filter functionality
+    const clearFiltersBtn = document.getElementById("clearFilters");
+
+    if (clearFiltersBtn) {
+      clearFiltersBtn.addEventListener("click", () => {
+        this.clearFilters();
+      });
+    }
+
+    // Auto-apply filters on input change
+    const nameFilter = document.getElementById("nameFilter");
+    const statusFilter = document.getElementById("statusFilter");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const stockFilter = document.getElementById("stockFilter");
+
+    if (nameFilter) {
+      nameFilter.addEventListener("input", () => {
+        clearTimeout(this.filterTimeout);
+        this.filterTimeout = setTimeout(() => {
+          this.applyFilters();
+        }, 500);
+      });
+    }
+
+    if (statusFilter) {
+      statusFilter.addEventListener("change", () => {
+        this.applyFilters();
+      });
+    }
+
+    if (categoryFilter) {
+      categoryFilter.addEventListener("change", () => {
+        this.applyFilters();
+      });
+      // populate options
+      this.populateCategoryFilterOptions();
+    }
+
+    if (stockFilter) {
+      stockFilter.addEventListener("change", () => {
+        this.applyFilters();
+      });
+    }
+
     // Modal functionality
     const modal = document.getElementById("productModal");
     const closeModal = document.querySelector(".close-modal");
 
+    // Create navigation (reuse edit page for creation)
+    const openCreateBtn = document.getElementById("openCreateModal");
+
     if (closeModal) {
       closeModal.addEventListener("click", () => {
         this.closeModal();
+      });
+    }
+
+    if (openCreateBtn) {
+      openCreateBtn.addEventListener("click", (e) => {
+        // if it's an anchor, let default navigate; if button, navigate manually
+        if (openCreateBtn.tagName !== "A") {
+          e.preventDefault();
+          window.location.href = "/products/edit/new";
+        }
       });
     }
 
@@ -80,7 +167,7 @@ class ProductManager {
         ...this.currentFilters,
       });
 
-      const response = await fetch(`/api/products?${queryParams}`);
+      const response = await fetch(`${API.PRODUCTS.BASE}?${queryParams}`);
       const data = await response.json();
 
       if (data.success) {
@@ -96,6 +183,111 @@ class ProductManager {
     } finally {
       this.showLoading(false);
     }
+  }
+
+  applyFilters() {
+    const nameFilter = document.getElementById("nameFilter");
+    const statusFilter = document.getElementById("statusFilter");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const stockFilter = document.getElementById("stockFilter");
+
+    // Reset to first page when applying filters
+    this.currentPage = 1;
+
+    // Update current filters
+    this.currentFilters = {
+      ...this.currentFilters,
+      sortBy: this.currentFilters.sortBy || "createdAt",
+      sortOrder: this.currentFilters.sortOrder || "desc",
+    };
+
+    // Add name filter
+    if (nameFilter && nameFilter.value.trim()) {
+      this.currentFilters.search = nameFilter.value.trim();
+    } else {
+      delete this.currentFilters.search;
+    }
+
+    // Add status filter
+    if (statusFilter && statusFilter.value) {
+      this.currentFilters.active = statusFilter.value;
+    } else {
+      delete this.currentFilters.active;
+    }
+
+    // Add category filter
+    if (categoryFilter && categoryFilter.value) {
+      this.currentFilters.category = categoryFilter.value;
+    } else {
+      delete this.currentFilters.category;
+    }
+
+    // Add stock filter - always clear previous stock filters first
+    delete this.currentFilters.minStock;
+    delete this.currentFilters.maxStock;
+
+    if (stockFilter && stockFilter.value) {
+      switch (stockFilter.value) {
+        case "in-stock":
+          this.currentFilters.minStock = 1;
+          break;
+        case "out-of-stock":
+          this.currentFilters.maxStock = 0;
+          break;
+        case "low-stock":
+          this.currentFilters.maxStock = 10;
+          this.currentFilters.minStock = 1;
+          break;
+      }
+    }
+
+    this.loadProducts();
+  }
+
+  // creation moved to edit page; no-op
+  async populateCategoryFilterOptions() {
+    try {
+      const select = document.getElementById("categoryFilter");
+      if (!select) return;
+      // Avoid refetch if already filled
+      if (select.options && select.options.length > 1) return;
+      const res = await fetch(`${API.CATEGORIES.BASE}?limit=1000`);
+      const data = await res.json();
+      const categories = Array.isArray(data.data) ? data.data : [];
+      select.innerHTML = '<option value="">Tất cả danh mục</option>';
+      categories.forEach((c) => {
+        const name = c.name || c.slug || "";
+        if (!name) return;
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+    } catch (_) {
+      // ignore errors
+    }
+  }
+
+  clearFilters() {
+    // Clear filter inputs
+    const nameFilter = document.getElementById("nameFilter");
+    const statusFilter = document.getElementById("statusFilter");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const stockFilter = document.getElementById("stockFilter");
+
+    if (nameFilter) nameFilter.value = "";
+    if (statusFilter) statusFilter.value = "";
+    if (categoryFilter) categoryFilter.value = "";
+    if (stockFilter) stockFilter.value = "";
+
+    // Reset filters
+    this.currentFilters = {
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    };
+
+    this.currentPage = 1;
+    this.loadProducts();
   }
 
   displayProducts(products) {
@@ -124,8 +316,9 @@ class ProductManager {
          <i class="fas fa-image" style="display: none;"></i>`
         : '<i class="fas fa-image"></i>';
 
-    const statusClass = product.active ? "active" : "inactive";
-    const statusText = product.active ? "Hoạt động" : "Không hoạt động";
+    const statusClass = product.active === true ? "active" : "inactive";
+    const statusText =
+      product.active === true ? "Hoạt động" : "Không hoạt động";
 
     const stockClass = product.stock > 0 ? "in-stock" : "out-of-stock";
     const stockText = product.stock > 0 ? product.stock : "Hết hàng";
@@ -212,6 +405,8 @@ class ProductManager {
     const prevPageBtn = document.getElementById("prevPage");
     const nextPageBtn = document.getElementById("nextPage");
     const pageInfo = document.getElementById("pageInfo");
+    const pageInput = document.getElementById("pageInput");
+    const limitSelect = document.getElementById("limitSelect");
 
     if (pagination.totalPages <= 1) {
       paginationElement.classList.add("hidden");
@@ -222,6 +417,19 @@ class ProductManager {
     prevPageBtn.disabled = !pagination.hasPrevPage;
     nextPageBtn.disabled = !pagination.hasNextPage;
     pageInfo.textContent = `Page ${pagination.currentPage} of ${pagination.totalPages}`;
+
+    if (pageInput) {
+      pageInput.value = pagination.currentPage;
+      pageInput.min = 1;
+      pageInput.max = Math.max(1, pagination.totalPages);
+    }
+
+    if (
+      limitSelect &&
+      ["5", "10", "25", "50"].includes(String(this.productsPerPage))
+    ) {
+      limitSelect.value = String(this.productsPerPage);
+    }
   }
 
   updateProductCount(count) {
@@ -320,7 +528,8 @@ class ProductManager {
           }" style="width: 100%; height: 100%; object-fit: cover;">`
         : '<i class="fas fa-image" style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 4rem; color: #ddd;"></i>';
 
-    const statusText = product.active ? "Hoạt động" : "Không hoạt động";
+    const statusText =
+      product.active === true ? "Hoạt động" : "Không hoạt động";
     const stockText =
       product.stock > 0 ? `${product.stock} đơn vị` : "Hết hàng";
     const categoryText = product.categories?.main || "Chưa phân loại";
@@ -377,7 +586,7 @@ class ProductManager {
 
   async viewProduct(productId) {
     try {
-      const response = await fetch(`/api/products/${productId}`);
+      const response = await fetch(`${API.PRODUCTS.BASE}/${productId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -399,7 +608,7 @@ class ProductManager {
   async deleteProduct(productId) {
     if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
       try {
-        const response = await fetch(`/api/products/${productId}`, {
+        const response = await fetch(`${API.PRODUCTS.BASE}/${productId}`, {
           method: "DELETE",
         });
         const data = await response.json();

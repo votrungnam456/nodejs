@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
@@ -9,6 +10,7 @@
     <link rel="stylesheet" href="/assets/css/products.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <header class="header">
         <div class="container">
@@ -48,85 +50,154 @@
             <!-- Products Tab Content -->
             <div id="productsContent" class="tab-content active">
 
-            <!-- Loading Spinner -->
-            <div id="loadingSpinner" class="loading-spinner hidden">
-                <div class="spinner"></div>
-                <p>Loading products...</p>
-            </div>
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="loading-spinner hidden">
+                    <div class="spinner"></div>
+                    <p>Loading products...</p>
+                </div>
 
-            <!-- Products Table -->
-            <section class="products-section">
-                <div class="products-header">
-                    <h2 class="products-title">Danh sách sản phẩm</h2>
-                    <div class="products-count">
-                        <span id="productsCount">0</span> sản phẩm
+                <!-- Products Table -->
+                <section class="products-section">
+                    <div class="products-header">
+                        <h2 class="products-title">Danh sách sản phẩm</h2>
+                        <div class="products-count">
+                            <span id="productsCount">0</span> sản phẩm
+                        </div>
+                        <div class="products-actions">
+                            <a href="/products/edit/new" class="btn btn-primary" id="openCreateModal">
+                                <i class="fas fa-plus"></i>
+                                Thêm sản phẩm
+                            </a>
+                        </div>
                     </div>
-                </div>
 
-                <div class="table-container">
-                    <table id="productsTable" class="products-table">
-                        <thead>
-                            <tr>
-                                <th>Hình ảnh</th>
-                                <th class="sortable" data-sort="title">
-                                    Tiêu đề
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-sort="category">
-                                    Danh mục
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-sort="active">
-                                    Trạng thái
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-sort="stock">
-                                    Tồn kho
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-sort="description">
-                                    Mô tả
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable active" data-sort="createdAt">
-                                    Ngày tạo
-                                    <i class="fas fa-sort-down sort-icon"></i>
-                                </th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productsTableBody">
-                            <!-- Products will be loaded here dynamically -->
-                        </tbody>
-                    </table>
-                </div>
+                    <!-- Filter Section -->
+                    <section class="filter-section">
+                        <div class="filter-container">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="nameFilter">Tên sản phẩm:</label>
+                                    <input type="text" id="nameFilter" placeholder="Nhập tên sản phẩm..."
+                                        class="filter-input" aria-label="Tên sản phẩm">
+                                </div>
 
-                <!-- No Products Message -->
-                <div id="noProducts" class="no-products hidden">
-                    <i class="fas fa-box-open"></i>
-                    <h3>Không có sản phẩm nào</h3>
-                    <p>Chưa có sản phẩm nào trong hệ thống</p>
-                </div>
-            </section>
+                                <div class="filter-group">
+                                    <label for="statusFilter">Trạng thái:</label>
+                                    <select id="statusFilter" class="filter-select" aria-label="Trạng thái">
+                                        <option value="">Tất cả trạng thái</option>
+                                        <option value="true">Hoạt động</option>
+                                        <option value="false">Không hoạt động</option>
+                                    </select>
+                                </div>
 
-            <!-- Pagination -->
-            <section class="pagination-section">
-                <div id="pagination" class="pagination hidden">
-                    <button id="prevPage" class="pagination-btn">
-                        <i class="fas fa-chevron-left"></i>
-                        Previous
-                    </button>
-                    
-                    <div class="page-numbers">
-                        <span id="pageInfo">Page 1 of 1</span>
+                                <div class="filter-group">
+                                    <label for="categoryFilter">Danh mục:</label>
+                                    <select id="categoryFilter" class="filter-select" aria-label="Danh mục">
+                                        <option value="">Tất cả danh mục</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-group">
+                                    <label for="stockFilter">Tồn kho:</label>
+                                    <select id="stockFilter" class="filter-select" aria-label="Tồn kho">
+                                        <option value="">Tất cả</option>
+                                        <option value="in-stock">Còn hàng</option>
+                                        <option value="out-of-stock">Hết hàng</option>
+                                        <option value="low-stock">Sắp hết hàng</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-actions">
+                                    <button id="clearFilters" class="filter-btn filter-btn-secondary">
+                                        <i class="fas fa-times"></i>
+                                        Xóa bộ lọc
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="table-container">
+                        <table id="productsTable" class="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Hình ảnh</th>
+                                    <th class="sortable" data-sort="title">
+                                        Tiêu đề
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="category">
+                                        Danh mục
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="active">
+                                        Trạng thái
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="stock">
+                                        Tồn kho
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="description">
+                                        Mô tả
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable active" data-sort="createdAt">
+                                        Ngày tạo
+                                        <i class="fas fa-sort-down sort-icon"></i>
+                                    </th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <!-- Products will be loaded here dynamically -->
+                            </tbody>
+                        </table>
                     </div>
-                    
-                    <button id="nextPage" class="pagination-btn">
-                        Next
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </section>
+
+                    <!-- No Products Message -->
+                    <div id="noProducts" class="no-products hidden">
+                        <i class="fas fa-box-open"></i>
+                        <h3>Không có sản phẩm nào</h3>
+                        <p>Chưa có sản phẩm nào trong hệ thống</p>
+                    </div>
+                </section>
+
+                <!-- Pagination -->
+                <section class="pagination-section">
+                    <div id="pagination" class="pagination hidden">
+                        <button id="prevPage" class="pagination-btn">
+                            <i class="fas fa-chevron-left"></i>
+                            Previous
+                        </button>
+
+                        <div class="page-numbers">
+                            <span id="pageInfo">Page 1 of 1</span>
+                        </div>
+
+                        <div class="pagination-controls">
+                            <label for="pageInput">Page</label>
+                            <input id="pageInput" type="number" min="1" value="1" class="pagination-input"
+                                aria-label="Page" />
+                        </div>
+
+                        <button id="nextPage" class="pagination-btn">
+                            Next
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="pagination-topbar">
+                        <div class="limit-controls">
+                            <label for="limitSelect">per page</label>
+                            <select id="limitSelect" class="limit-select" aria-label="Items per page">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <!-- Import Tab Content -->
@@ -139,7 +210,8 @@
                             Import JSON Data
                         </h2>
                         <p class="import-description">
-                            Upload a JSON file to import data. Supported formats: products, users, or any structured JSON data.
+                            Upload a JSON file to import data. Supported formats: products, users, or any structured
+                            JSON data.
                         </p>
                     </div>
 
@@ -198,22 +270,6 @@
                                         <option value="update">Update (Merge existing)</option>
                                     </select>
                                 </div>
-
-                                <div class="option-group">
-                                    <label class="option-label">Validation:</label>
-                                    <div class="checkbox-group">
-                                        <label class="checkbox-label">
-                                            <input type="checkbox" id="validateData" checked>
-                                            <span class="checkmark"></span>
-                                            Validate data structure
-                                        </label>
-                                        <label class="checkbox-label">
-                                            <input type="checkbox" id="skipDuplicates" checked>
-                                            <span class="checkmark"></span>
-                                            Skip duplicates
-                                        </label>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -248,6 +304,35 @@
                     </div>
                 </section>
 
+                <!-- Import History -->
+                <section id="historySection" class="results-section">
+                    <div class="results-header">
+                        <h3>Import History</h3>
+                        <button id="refreshHistory" class="btn btn-secondary refresh-history-btn">
+                            <i class="fas fa-rotate"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="results-content">
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên file</th>
+                                    <th>Kích thước</th>
+                                    <th>Tổng bản ghi</th>
+                                    <th>Thành công</th>
+                                    <th>Thất bại</th>
+                                    <th>Tình trạng</th>
+                                    <th>Thời gian</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importHistoryBody">
+                                <!-- Rows injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <!-- Loading Overlay -->
                 <div id="loadingOverlay" class="loading-overlay hidden">
                     <div class="loading-content">
@@ -269,6 +354,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Error Modal -->
     <div id="errorModal" class="modal hidden">
@@ -295,7 +381,9 @@
     <script>
         window.BASE_API_URL = '<%= BASE_API_URL %>';
     </script>
+    <script src="/assets/js/api.js"></script>
     <script src="/assets/js/products.js"></script>
     <script src="/assets/js/import.js"></script>
 </body>
-</html> 
+
+</html>

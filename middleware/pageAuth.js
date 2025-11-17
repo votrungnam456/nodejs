@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const User = require("../model/user");
+import jwt from "jsonwebtoken";
+import User from "@/model/user.js";
 
 const pageAuthMiddleware = async (req, res, next) => {
   try {
@@ -35,4 +35,4 @@ const pageAuthMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = pageAuthMiddleware;
+export default pageAuthMiddleware;

@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const loginUser = async (username, password) => {
     try {
-      const response = await fetch("/api/user/login", {
+      const response = await fetch(API.AUTH.LOGIN, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const callExternalAPI = async () => {
     try {
-      const response = await fetch("/api/user");
+      const response = await fetch(API.USER.ME);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

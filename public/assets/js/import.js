@@ -239,19 +239,19 @@ class ImportManager {
 
       // Determine the API endpoint based on data type
       const dataType = document.getElementById("dataType").value;
-      let apiEndpoint = "/api/products"; // default
+      let apiEndpoint = API.PRODUCTS.BASE; // default
 
       if (dataType === "categories") {
-        apiEndpoint = "/api/categories/import";
+        apiEndpoint = API.CATEGORIES.IMPORT;
       } else if (dataType === "products") {
-        apiEndpoint = "/api/products";
+        apiEndpoint = API.PRODUCTS.BASE;
       } else if (dataType === "auto") {
         // Auto-detect based on file content
         const detectedType = this.detectDataType(this.jsonData);
         if (detectedType === "categories") {
-          apiEndpoint = "/api/categories/import";
+          apiEndpoint = API.CATEGORIES.IMPORT;
         } else {
-          apiEndpoint = "/api/products";
+          apiEndpoint = API.PRODUCTS.BASE;
         }
       }
 
@@ -268,22 +268,22 @@ class ImportManager {
 
         this.showLoading(false);
 
-        // Display success results
-        const results = {
-          success: true,
-          totalItems:
-            (data.data.successCount || 0) + (data.data.failedCount || 0),
-          processedItems: data.data.successCount || 0,
-          skippedItems: data.data.failedCount || 0,
-          errors: [],
-          dataType:
-            dataType === "auto" ? this.detectDataType(this.jsonData) : dataType,
-          importMode: "upload",
-          timestamp: new Date().toISOString(),
-          fileName: this.currentFile.name,
-          fileSize: this.formatFileSize(this.currentFile.size),
-        };
-        this.displayResults(results);
+        // // Display success results
+        // const results = {
+        //   success: true,
+        //   totalItems:
+        //     (data.data.successCount || 0) + (data.data.failedCount || 0),
+        //   processedItems: data.data.successCount || 0,
+        //   skippedItems: data.data.failedCount || 0,
+        //   errors: [],
+        //   dataType:
+        //     dataType === "auto" ? this.detectDataType(this.jsonData) : dataType,
+        //   importMode: "upload",
+        //   timestamp: new Date().toISOString(),
+        //   fileName: this.currentFile.name,
+        //   fileSize: this.formatFileSize(this.currentFile.size),
+        // };
+        // this.displayResults(results);
       } else if (res.status === 408) {
         throw new Error(
           "Request timeout - the operation took too long. Please try with a smaller file."
@@ -342,46 +342,6 @@ class ImportManager {
       validateData: document.getElementById("validateData").checked,
       skipDuplicates: document.getElementById("skipDuplicates").checked,
     };
-  }
-
-  processImport(data, options) {
-    // const results = {
-    //   success: true,
-    //   totalItems: 0,
-    //   processedItems: 0,
-    //   skippedItems: 0,
-    //   errors: [],
-    //   dataType: this.detectDataType(data),
-    //   importMode: options.importMode,
-    //   timestamp: new Date().toISOString(),
-    // };
-    const results = [];
-    console.log(data);
-    console.log(results);
-    for (const item of data) {
-      if (item._source) {
-        // const product = new Product(item.source);
-        // await product.save();
-        results.push(item._source);
-      }
-    }
-    console.log(results);
-    // if (Array.isArray(data)) {
-    //   results.totalItems = data.length;
-    //   results.processedItems = Math.floor(data.length * 0.85); // Simulate processing
-    //   results.skippedItems = data.length - results.processedItems;
-    // } else if (typeof data === "object") {
-    //   results.totalItems = Object.keys(data).length;
-    //   results.processedItems = Math.floor(results.totalItems * 0.9);
-    //   results.skippedItems = results.totalItems - results.processedItems;
-    // }
-
-    // Simulate some errors
-    // if (Math.random() < 0.1) {
-    //   results.errors.push("Some items had invalid data format");
-    // }
-
-    return results;
   }
 
   generatePreview(data, options) {
@@ -760,3 +720,48 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+// Import history
+async function loadImportHistory() {
+  try {
+    const res = await fetch(`/api/import-history?limit=50`);
+    const data = await res.json();
+    if (!data.success) return;
+    const tbody = document.getElementById("importHistoryBody");
+    if (!tbody) return;
+    tbody.innerHTML = data.data
+      .map((h) => {
+        const sizeKb = h.size ? (h.size / 1024).toFixed(1) + " KB" : "-";
+        const statusClass =
+          h.status === "completed"
+            ? "status-completed"
+            : h.status === "processing"
+            ? "status-processing"
+            : "status-error";
+        const createdAt = h.createdAt
+          ? new Date(h.createdAt).toLocaleString("vi-VN")
+          : "";
+        return `
+          <tr>
+            <td>${h.filename || "-"}</td>
+            <td>${sizeKb}</td>
+            <td>${h.totalRecords ?? "-"}</td>
+            <td>${h.successCount ?? "-"}</td>
+            <td>${h.failedCount ?? "-"}</td>
+            <td><span class="${statusClass}">${h.status}</span></td>
+            <td>${createdAt}</td>
+          </tr>
+        `;
+      })
+      .join("");
+  } catch (_) {}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const refreshBtn = document.getElementById("refreshHistory");
+  if (refreshBtn) refreshBtn.addEventListener("click", loadImportHistory);
+  // auto load on tab open
+  loadImportHistory();
+  // periodic refresh
+  setInterval(loadImportHistory, 15000);
+});

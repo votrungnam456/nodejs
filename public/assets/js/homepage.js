@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/user/me");
+      const response = await fetch(API.USER.ME);
       if (response.ok) {
         const data = await response.json();
         if (data.status === 200) {
@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("/api/user/logout", {
+      const response = await fetch(API.AUTH.LOGOUT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

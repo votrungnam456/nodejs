@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node --import ./register.mjs server.js",
+    "dev": "nodemon --exec \"node --import ./register.mjs\" server.js"
   },
   "keywords": [
     "nodejs"
@@ -20,12 +21,28 @@
     "ejs": "^3.1.8",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "module-alias": "^2.2.3",
     "mongodb": "^6.17.0",
     "mongoose": "^8.17.0",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemon": "^3.1.10",
     "p-queue": "^8.1.0",
     "stream-json": "^1.9.1",
     "yargs": "^18.0.0"
+  },
+  "volta": {
+    "node": "22.18.0"
+  },
+  "type": "module",
+  "imports": {
+    "@/config/*": "./config/*",
+    "@/constants/*": "./constants/*",
+    "@/handlers/*": "./handlers/*",
+    "@/middleware/*": "./middleware/*",
+    "@/model/*": "./model/*",
+    "@/routes/*": "./routes/*",
+    "@/utils/*": "./utils/*",
+    "@/cron/*": "./cron/*"
   }
 }
